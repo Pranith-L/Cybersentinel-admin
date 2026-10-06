@@ -60,14 +60,22 @@ export default function EventDonutChart({
   });
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#1d2f5c] mb-6">
+    <div
+      className="w-full border border-[#1d2f5c] p-4 sm:p-5"
+      style={{
+        background:
+          'radial-gradient(circle at top, rgba(37,99,235,0.12), transparent 38%), linear-gradient(180deg, rgba(5,10,22,0.95), rgba(9,12,28,0.9))',
+        boxShadow: '0 0 18px rgba(37,99,235,0.12)',
+        borderRadius: '28px',
+      }}
+    >
+      <div className="flex flex-col gap-4 mb-6">
         <div className="flex-1 min-w-0 text-left">
-          <h3 className="text-lg sm:text-xl font-black font-heading text-white tracking-tight text-left">
+          <h3 className="text-3xl sm:text-4xl lg:text-[2.2rem] font-black font-heading text-white leading-none tracking-tight text-left">
             {title}
           </h3>
           {subtitle && (
-            <p className="mt-1 text-xs sm:text-sm text-slate-400 font-semibold max-w-[440px] leading-snug text-left">
+            <p className="mt-2 text-sm sm:text-lg text-slate-300 font-medium max-w-[440px] leading-snug text-left">
               {subtitle}
             </p>
           )}
@@ -141,7 +149,7 @@ export default function EventDonutChart({
 
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
               <span
-                className="text-4xl sm:text-5xl font-black font-heading tracking-tight leading-none transition-colors"
+                className="text-5xl sm:text-6xl font-black font-heading tracking-tight leading-none transition-colors"
                 style={{
                   color: hoveredIdx !== null ? activeSegments[hoveredIdx]?.color || '#ffffff' : '#ffffff',
                   textShadow: hoveredIdx !== null

@@ -10,84 +10,86 @@ import {
 import { cachedRequest } from '../utils/requestCache';
 
 // Dashboard metrics
-export async function getDashboardSummary() {
-  return cachedRequest('admin-dashboard-summary', async () => {
+export async function getDashboardSummary(customClient = null) {
+  const clientToUse = customClient || supabase;
+  const cacheKey = customClient ? 'admin-dashboard-summary-custom' : 'admin-dashboard-summary';
+  return cachedRequest(cacheKey, async () => {
     let regData = null;
     let payData = null;
 
     try {
       const [regRes, payRes] = await Promise.all([
-        supabase.from('admin_registration_summary').select('*').single(),
-        supabase.from('admin_payment_summary').select('*').single(),
+        clientToUse.from('admin_registration_summary').select('*').single(),
+        clientToUse.from('admin_payment_summary').select('*').single(),
       ]);
 
-    if (!regRes.error && regRes.data) regData = regRes.data;
-    if (!payRes.error && payRes.data) payData = payRes.data;
-  } catch (err) {
-    console.warn('Could not query admin summary views:', err);
-  }
-
-  // Fallback real-count defaults if views are not available
-  if (!regData) {
-    try {
-      const { data: allRegs } = await supabase
-        .from('registrations')
-        .select('id, selected_day, status');
-      const regs = (allRegs || []).map((r) => ({
-        ...r,
-        status: normalizeRegistrationStatus(r),
-      }));
-      regData = {
-        total_registrations: regs.length,
-        day_1_registrations: regs.filter((r) => r.selected_day === 'DAY_1').length,
-        day_2_registrations: regs.filter((r) => r.selected_day === 'DAY_2').length,
-        both_day_registrations: regs.filter((r) => r.selected_day === 'BOTH').length,
-        confirmed_registrations: regs.filter((r) => r.status === 'CONFIRMED' || r.status === 'VERIFIED').length,
-        payment_pending: regs.filter((r) => r.status === 'PAYMENT_PENDING' || r.status === 'PENDING').length,
-        cancelled_registrations: regs.filter((r) => r.status === 'CANCELLED' || r.status === 'REJECTED').length,
-      };
-    } catch {
-      regData = {
-        total_registrations: 0,
-        day_1_registrations: 0,
-        day_2_registrations: 0,
-        both_day_registrations: 0,
-        confirmed_registrations: 0,
-        payment_pending: 0,
-        cancelled_registrations: 0,
-      };
+      if (!regRes.error && regRes.data) regData = regRes.data;
+      if (!payRes.error && payRes.data) payData = payRes.data;
+    } catch (err) {
+      console.warn('Could not query admin summary views:', err);
     }
-  }
 
-  if (!payData) {
-    try {
-      const { data: allPays } = await supabase
-        .from('payments')
-        .select('id, amount, status');
-      const pays = allPays || [];
-      payData = {
-        total_payments: pays.length,
-        verified_payments: pays.filter((p) => p.status === 'VERIFIED').length,
-        pending_payments: pays.filter((p) => p.status === 'PENDING').length,
-        under_review_payments: pays.filter((p) => p.status === 'UNDER_REVIEW').length,
-        rejected_payments: pays.filter((p) => p.status === 'REJECTED').length,
-        flagged_payments: 0,
-        verified_amount: pays
-          .filter((p) => p.status === 'VERIFIED')
-          .reduce((acc, p) => acc + Number(p.amount || 0), 0),
-      };
-    } catch {
-      payData = {
-        total_payments: 0,
-        verified_payments: 0,
-        pending_payments: 0,
-        under_review_payments: 0,
-        rejected_payments: 0,
-        flagged_payments: 0,
-        verified_amount: 0,
-      };
+    // Fallback real-count defaults if views are not available
+    if (!regData) {
+      try {
+        const { data: allRegs } = await clientToUse
+          .from('registrations')
+          .select('id, selected_day, status');
+        const regs = (allRegs || []).map((r) => ({
+          ...r,
+          status: normalizeRegistrationStatus(r),
+        }));
+        regData = {
+          total_registrations: regs.length,
+          day_1_registrations: regs.filter((r) => r.selected_day === 'DAY_1').length,
+          day_2_registrations: regs.filter((r) => r.selected_day === 'DAY_2').length,
+          both_day_registrations: regs.filter((r) => r.selected_day === 'BOTH').length,
+          confirmed_registrations: regs.filter((r) => r.status === 'CONFIRMED' || r.status === 'VERIFIED').length,
+          payment_pending: regs.filter((r) => r.status === 'PAYMENT_PENDING' || r.status === 'PENDING').length,
+          cancelled_registrations: regs.filter((r) => r.status === 'CANCELLED' || r.status === 'REJECTED').length,
+        };
+      } catch {
+        regData = {
+          total_registrations: 0,
+          day_1_registrations: 0,
+          day_2_registrations: 0,
+          both_day_registrations: 0,
+          confirmed_registrations: 0,
+          payment_pending: 0,
+          cancelled_registrations: 0,
+        };
+      }
     }
-  }
+
+    if (!payData) {
+      try {
+        const { data: allPays } = await clientToUse
+          .from('payments')
+          .select('id, amount, status');
+        const pays = allPays || [];
+        payData = {
+          total_payments: pays.length,
+          verified_payments: pays.filter((p) => p.status === 'VERIFIED').length,
+          pending_payments: pays.filter((p) => p.status === 'PENDING').length,
+          under_review_payments: pays.filter((p) => p.status === 'UNDER_REVIEW').length,
+          rejected_payments: pays.filter((p) => p.status === 'REJECTED').length,
+          flagged_payments: 0,
+          verified_amount: pays
+            .filter((p) => p.status === 'VERIFIED')
+            .reduce((acc, p) => acc + Number(p.amount || 0), 0),
+        };
+      } catch {
+        payData = {
+          total_payments: 0,
+          verified_payments: 0,
+          pending_payments: 0,
+          under_review_payments: 0,
+          rejected_payments: 0,
+          flagged_payments: 0,
+          verified_amount: 0,
+        };
+      }
+    }
 
     // Apply real-time local status overrides
     const adjusted = applySummaryOverrides(regData, payData);
@@ -100,19 +102,31 @@ export async function getDashboardSummary() {
 }
 
 // Dashboard charts use live registrations merged with persistent overrides
-export async function getDashboardRegistrations() {
-  return cachedRequest('admin-dashboard-registrations', async () => {
+export async function getDashboardRegistrations(customClient = null) {
+  const clientToUse = customClient || supabase;
+  const cacheKey = customClient ? 'admin-dashboard-registrations-custom' : 'admin-dashboard-registrations';
+  return cachedRequest(cacheKey, async () => {
     let list = [];
     try {
-      const { data, error } = await supabase
+      const { data, error } = await clientToUse
         .from('registrations')
         .select(
           'id, registration_code, selected_day, status, created_at, payments(status), selected_event_registrations(event_id, events(id, code, name, day, event_type)), special_event_registrations(special_event_id, special_events(id, code, name))'
         )
         .order('created_at', { ascending: true });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         list = data;
+      } else if (customClient) {
+        const { data: fallbackData } = await supabase
+          .from('registrations')
+          .select(
+            'id, registration_code, selected_day, status, created_at, payments(status), selected_event_registrations(event_id, events(id, code, name, day, event_type)), special_event_registrations(special_event_id, special_events(id, code, name))'
+          )
+          .order('created_at', { ascending: true });
+        if (fallbackData && fallbackData.length > 0) {
+          list = fallbackData;
+        }
       }
     } catch (err) {
       console.warn('Dashboard registrations fetch warning:', err);
