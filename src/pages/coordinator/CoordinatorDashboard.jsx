@@ -70,6 +70,19 @@ export default function CoordinatorDashboard() {
 
       const { normalEvents, specialEvents } = await refreshEvents();
 
+      let symposiumRegistrations = [];
+      let symposiumSummary = null;
+      try {
+        const symRes = await fetch('/api/symposium-registrations');
+        if (symRes.ok) {
+          const symJson = await symRes.json();
+          symposiumRegistrations = symJson.registrations || (Array.isArray(symJson) ? symJson : []);
+          symposiumSummary = symJson.summary || null;
+        }
+      } catch (symErr) {
+        console.warn('Could not load symposium registrations endpoint:', symErr);
+      }
+
       const [sumData, globalParticipants, partList, specialCatalog, eventsData] = await Promise.all([
         getDashboardSummary().catch(() => null),
         getDashboardRegistrations().catch(() => []),
@@ -78,8 +91,10 @@ export default function CoordinatorDashboard() {
         getEvents().catch(() => []),
       ]);
 
-      if (sumData) setSummary(sumData);
-      setAllEventParticipants(globalParticipants || []);
+      if (symposiumSummary || sumData) setSummary(symposiumSummary || sumData);
+      setAllEventParticipants(
+        symposiumRegistrations.length ? symposiumRegistrations : (globalParticipants || [])
+      );
       setParticipants(partList || []);
       setAllSpecialEvents(specialCatalog || []);
       if (eventsData && eventsData.length > 0) {
