@@ -71,9 +71,9 @@ export default function CoordinatorDashboard() {
       const { normalEvents, specialEvents } = await refreshEvents();
 
       const [sumData, globalParticipants, partList, specialCatalog, eventsData] = await Promise.all([
-        getDashboardSummary(client).catch(() => null),
-        getDashboardRegistrations(client).catch(() => []),
-        getCoordinatorParticipants(client, normalEvents, specialEvents).catch(() => []),
+        getDashboardSummary().catch(() => null),
+        getDashboardRegistrations().catch(() => []),
+        getCoordinatorParticipants(normalEvents, specialEvents).catch(() => []),
         getAdminSpecialEvents().catch(() => []),
         getEvents().catch(() => []),
       ]);

@@ -87,14 +87,28 @@ export async function getCoordinatorAssignedEvents(client, userId) {
   }, 20000);
 }
 
-export async function getCoordinatorParticipants(client, assignedEvents = [], assignedSpecialEvents = []) {
-  const eventCacheKey = `coord-participants:${(assignedEvents || []).map((e) => e.id).join('-')}::${(assignedSpecialEvents || []).map((e) => e.id).join('-')}`;
+import { getCoordinatorClient } from '../config/supabase';
+
+export async function getCoordinatorParticipants(clientOrAssigned, assignedEvents = [], assignedSpecialEvents = []) {
+  let client = clientOrAssigned;
+  let normalList = assignedEvents;
+  let specialList = assignedSpecialEvents;
+
+  if (Array.isArray(clientOrAssigned)) {
+    normalList = clientOrAssigned;
+    specialList = Array.isArray(assignedEvents) ? assignedEvents : [];
+    client = getCoordinatorClient();
+  } else if (!client || typeof client?.from !== 'function') {
+    client = getCoordinatorClient();
+  }
+
+  const eventCacheKey = `coord-participants:${(normalList || []).map((e) => e.id).join('-')}::${(specialList || []).map((e) => e.id).join('-')}`;
 
   return cachedRequest(
     eventCacheKey,
     async () => {
-      const normalEventIds = assignedEvents.map((e) => e.id);
-      const specialEventIds = assignedSpecialEvents.map((e) => e.id);
+      const normalEventIds = (normalList || []).map((e) => e.id);
+      const specialEventIds = (specialList || []).map((e) => e.id);
 
       let allowedRegistrationIds = new Set();
       try {
