@@ -707,65 +707,28 @@
   cursor: not-allowed;
 }
 
-/* Stat & Chart Grids — fully responsive */
+/* Stat & Chart Grids */
 .cs-stat-grid {
   display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
+  gap: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: stretch;
-  width: 100%;
 }
-@media (min-width: 640px) {
-  .cs-stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-  }
-}
-@media (min-width: 1024px) {
-  .cs-stat-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
-  }
-}
-
 .cs-chart-grid {
   display: grid;
   gap: 20px;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: stretch;
-  width: 100%;
 }
-.cs-chart-grid > .cs-span-7,
-.cs-chart-grid > .cs-span-5 {
-  grid-column: span 1;
-}
-@media (min-width: 1024px) {
-  .cs-chart-grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 24px;
-  }
-  .cs-chart-grid > .cs-span-7 { grid-column: span 7 / span 7; }
-  .cs-chart-grid > .cs-span-5 { grid-column: span 5 / span 5; }
-}
+.cs-chart-grid > .cs-span-7 { grid-column: span 7 / span 7; }
+.cs-chart-grid > .cs-span-5 { grid-column: span 5 / span 5; }
 
 .cs-roster-grid {
   display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
+  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
   padding-top: 8px;
-}
-@media (min-width: 768px) {
-  .cs-roster-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
-  }
-}
-@media (min-width: 1024px) {
-  .cs-roster-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px;
-  }
 }
 
 /* Stat Cards */

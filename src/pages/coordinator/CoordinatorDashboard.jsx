@@ -5,7 +5,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import useCoordinatorAssignedEvents from '../../hooks/useCoordinatorAssignedEvents';
 import { getCoordinatorParticipants } from '../../services/coordinatorService';
-import { getDashboardRegistrations, getAdminSpecialEvents } from '../../services/adminService';
+import {
+  getDashboardSummary,
+  getDashboardRegistrations,
+  getAdminSpecialEvents,
+  getEvents,
+} from '../../services/adminService';
 import { subscribeToRealtimeUpdates } from '../../utils/statusStore';
 import RegistrationsBarChart from '../../components/charts/RegistrationsBarChart';
 import EventDonutChart from '../../components/charts/EventDonutChart';
@@ -15,8 +20,11 @@ import {
   getTrackCounts,
   percentageOf,
 } from '../../utils/dashboardMetrics';
-import { getChartRegistrationSource } from '../../utils/eventChartData';
-import { getDaySplitCounts } from '../../utils/eventCategoryCounts';
+import {
+  getNonTechEvents,
+  countSelectionsByEvent,
+  buildSegments,
+} from '../../config/events';
 import {
   Users,
   CheckCircle2,
@@ -37,6 +45,7 @@ export default function CoordinatorDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [summary, setSummary] = useState(null);
   const [allDbEvents, setAllDbEvents] = useState([]);
   const [allSpecialEvents, setAllSpecialEvents] = useState([]);
   const [participants, setParticipants] = useState([]);
@@ -59,27 +68,23 @@ export default function CoordinatorDashboard() {
     try {
       setRefreshing(true);
 
-      // Also fetch all system events to give full technical event breakdown
-      try {
-        const { data: dbEvts } = await client.from('events').select('id, code, name, day, event_type');
-        if (dbEvts && dbEvts.length > 0) {
-          setAllDbEvents(dbEvts);
-        }
-      } catch (evtErr) {
-        console.warn('Could not load global events list:', evtErr);
-      }
-
       const { normalEvents, specialEvents } = await refreshEvents();
 
-      const [globalParticipants, partList, specialCatalog] = await Promise.all([
+      const [sumData, globalParticipants, partList, specialCatalog, eventsData] = await Promise.all([
+        getDashboardSummary().catch(() => null),
         getDashboardRegistrations().catch(() => []),
         getCoordinatorParticipants(client, normalEvents, specialEvents).catch(() => []),
         getAdminSpecialEvents().catch(() => []),
+        getEvents().catch(() => []),
       ]);
 
+      if (sumData) setSummary(sumData);
       setAllEventParticipants(globalParticipants || []);
       setParticipants(partList || []);
       setAllSpecialEvents(specialCatalog || []);
+      if (eventsData && eventsData.length > 0) {
+        setAllDbEvents(eventsData);
+      }
     } catch (err) {
       console.error('Could not load coordinator dashboard:', err);
       setParticipants([]);
@@ -99,16 +104,10 @@ export default function CoordinatorDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [chartView, setChartView] = useState('TOTAL_BREAKDOWN'); // TECH_BREAKDOWN | NON_TECH_BREAKDOWN | TOTAL_BREAKDOWN | SPECIAL_BREAKDOWN
+  const [chartView, setChartView] = useState('TECH_BREAKDOWN'); // 'TECH_BREAKDOWN' | 'NON_TECH_BREAKDOWN' | 'TOTAL_BREAKDOWN' | 'SPECIAL_BREAKDOWN'
 
-  const chartRegistrationSource = getChartRegistrationSource({
-    allEventParticipants,
-    participants,
-    allDbEvents,
-  });
-  const chartTotalCount = chartRegistrationSource.length || 0;
+  // Coordinator-specific participant counts for stat cards & left bar chart
   const barChartSource = participants.length ? participants : allEventParticipants;
-
   const statusCounts = getRegistrationStatusCounts(participants);
   const trackCounts = getTrackCounts(participants);
   const totalCount = statusCounts.total;
@@ -116,22 +115,50 @@ export default function CoordinatorDashboard() {
   const pendingCount = statusCounts.pending;
   const rejectedCount = statusCounts.rejected;
 
+  // Global symposium registrations for the right box pie chart (matching Admin Dashboard)
+  const globalRegistrations = allEventParticipants.length ? allEventParticipants : participants;
+  const regSum = summary?.registrationSummary || summary?.registrations || {};
+  const globalStatusCounts = getRegistrationStatusCounts(globalRegistrations);
+  const globalTrackCounts = getTrackCounts(globalRegistrations);
+  const totalRegistrations = Number(regSum.total_registrations ?? globalStatusCounts.total);
+
+  const countByCategory = globalRegistrations.reduce(
+    (counts, regItem) => {
+      const selectedDay = String(regItem?.selected_day || '').toUpperCase();
+      const selectedEventRegs = regItem.selected_event_registrations || regItem.event_registrations || [];
+      const specialRegs = regItem.special_event_registrations || [];
+
+      const hasTech = selectedEventRegs.some((reg) => {
+        const eventDay = String(reg?.events?.day || reg?.day || '').toUpperCase();
+        return eventDay === 'DAY_1' || eventDay === 'BOTH' || eventDay === 'ALL';
+      });
+
+      const hasNonTech = selectedEventRegs.some((reg) => {
+        const eventDay = String(reg?.events?.day || reg?.day || '').toUpperCase();
+        return eventDay === 'DAY_2' || eventDay === 'BOTH' || eventDay === 'ALL';
+      });
+
+      if (selectedDay === 'DAY_1' || hasTech) counts.tech += 1;
+      if (selectedDay === 'DAY_2' || hasNonTech) counts.nonTech += 1;
+      if (selectedDay === 'BOTH' || selectedDay === 'ALL') counts.both += 1;
+      if (selectedDay === 'SPECIAL' || specialRegs.length > 0) counts.special += 1;
+
+      return counts;
+    },
+    { tech: 0, nonTech: 0, both: 0, special: 0 }
+  );
+
+  const day1TechCount = Math.max(Number(regSum.day_1_registrations || 0), countByCategory.tech);
+  const day2NonTechCount = Math.max(Number(regSum.day_2_registrations || 0), countByCategory.nonTech);
+  const bothDayCount = Math.max(Number(regSum.both_day_registrations || 0), countByCategory.both);
+  const specialTracksCount = Math.max(Number(globalTrackCounts.special || 0), countByCategory.special);
+
   const canonicalDay1Events = [
     { id: 'PP', code: 'PP', name: 'Paper Presentation', day: 'DAY_1' },
     { id: 'UN', code: 'UN', name: 'Unsaid', day: 'DAY_1' },
     { id: 'CC', code: 'CC', name: 'Cipher Coding', day: 'DAY_1' },
     { id: 'WE', code: 'WE', name: 'Weblica', day: 'DAY_1' },
     { id: 'XC', code: 'XC', name: 'Xcoders', day: 'DAY_1' },
-  ];
-
-  const canonicalNonTechEvents = [
-    { id: 'GD', code: 'GD', name: 'Group Dance', day: 'DAY_2' },
-    { id: 'SP', code: 'SP', name: 'Stage Play', day: 'DAY_2' },
-    { id: 'CO', code: 'CO', name: 'Connections', day: 'DAY_2' },
-    { id: 'FTB', code: 'FTB', name: 'Find the BGM', day: 'DAY_2' },
-    { id: 'MS', code: 'MS', name: 'Mixed Signals', day: 'DAY_2' },
-    { id: 'LIL', code: 'LIL', name: 'Lost in Lyrics', day: 'DAY_2' },
-    { id: 'TC', code: 'TC', name: 'Thiruvizha Corner', day: 'DAY_2' },
   ];
 
   const dedupeByCode = (items = []) => {
@@ -152,20 +179,19 @@ export default function CoordinatorDashboard() {
 
   const systemTechEvents = dedupeByCode([
     ...allDbEvents,
-    ...assignedEvents,
     ...canonicalDay1Events,
   ]).filter((event) => event.day === 'DAY_1');
   const finalTechEvents = systemTechEvents.length ? systemTechEvents : canonicalDay1Events;
 
-  const systemNonTechEvents = dedupeByCode([
-    ...allDbEvents,
-    ...assignedEvents,
-    ...canonicalNonTechEvents,
-  ]).filter((event) => event.day === 'DAY_2' || event.day === 'BOTH' || event.day === 'ALL' || !event.day);
-  const finalNonTechEvents = systemNonTechEvents.length ? systemNonTechEvents : canonicalNonTechEvents;
-
   const distinctColors = [
-    '#00f0ff', '#f59e0b', '#a855f7', '#10b981', '#ec4899', '#3b82f6', '#ff5722', '#84cc16',
+    '#00f0ff', // Electric Cyan
+    '#f59e0b', // Amber Gold
+    '#a855f7', // Neon Purple
+    '#10b981', // Emerald Green
+    '#ec4899', // Hot Pink
+    '#3b82f6', // Royal Blue
+    '#ff5722', // Radiant Red-Orange
+    '#84cc16', // Electric Lime
   ];
 
   const normalizeEventValue = (value) => String(value ?? '').trim().toLowerCase();
@@ -195,12 +221,12 @@ export default function CoordinatorDashboard() {
   const eventCounts = new Map();
   finalTechEvents.forEach((ev) => eventCounts.set(eventCountKey(ev), 0));
 
-  chartRegistrationSource.forEach((participant) => {
+  globalRegistrations.forEach((regItem) => {
     let matched = false;
-    const selections = participant.selected_event_registrations || participant.event_registrations || [];
+    const selections = regItem.selected_event_registrations || regItem.event_registrations || [];
     selections.forEach((reg) => {
       if (reg?.active === false) return;
-      const matchedEvent = locateEventMatch(reg.events || reg);
+      const matchedEvent = locateEventMatch(reg.events || reg, finalTechEvents);
       if (matchedEvent) {
         const key = eventCountKey(matchedEvent);
         eventCounts.set(key, (eventCounts.get(key) || 0) + 1);
@@ -209,131 +235,100 @@ export default function CoordinatorDashboard() {
     });
 
     if (!matched) {
-      const pEventList = Array.isArray(participant.events)
-        ? participant.events
-        : [participant.event_name];
-      for (const evName of pEventList) {
-        if (!evName) continue;
-        const matchedEvent = locateEventMatch({ name: evName, code: evName });
-        if (matchedEvent) {
-          const key = eventCountKey(matchedEvent);
+      const day = regItem.event_day || regItem.registration_type || regItem.selected_day;
+      if (day === 'DAY_1' || day === 'BOTH' || day === 'ALL') {
+        const firstEv = finalTechEvents[0];
+        if (firstEv) {
+          const key = eventCountKey(firstEv);
           eventCounts.set(key, (eventCounts.get(key) || 0) + 1);
-          matched = true;
-          break;
         }
       }
     }
-
-    if (!matched && (participant.selected_day === 'DAY_1' || participant.selected_day === 'BOTH' || participant.selected_day === 'ALL')) {
-      const fallbackEvent = finalTechEvents[0];
-      if (fallbackEvent) {
-        const key = eventCountKey(fallbackEvent);
-        eventCounts.set(key, (eventCounts.get(key) || 0) + 1);
-      }
-    }
   });
 
-  const technicalEventCounts = finalTechEvents.map((event) => ({
-    event,
-    count: eventCounts.get(eventCountKey(event)) || 0,
-  }));
-  const overallTechCount = technicalEventCounts.reduce((total, item) => total + item.count, 0);
+  const totalTechRegistrations = Array.from(eventCounts.values()).reduce((a, b) => a + b, 0);
 
-  const techSegments = technicalEventCounts
-    .map((item, index) => ({
-      label: item.event.name,
-      count: item.count,
-      percentage: percentageOf(item.count, overallTechCount),
-      color: distinctColors[index % distinctColors.length],
-    }))
-    .filter((segment) => segment.count > 0 || overallTechCount === 0);
-
-  const nonTechCounts = new Map();
-  finalNonTechEvents.forEach((event) => nonTechCounts.set(eventCountKey(event), 0));
-
-  chartRegistrationSource.forEach((participant) => {
-    let matched = false;
-    const selections = participant.selected_event_registrations || participant.event_registrations || [];
-    selections.forEach((reg) => {
-      if (reg?.active === false) return;
-      const matchedEvent = locateEventMatch(reg.events || reg, finalNonTechEvents);
-      if (matchedEvent) {
-        const key = eventCountKey(matchedEvent);
-        nonTechCounts.set(key, (nonTechCounts.get(key) || 0) + 1);
-        matched = true;
-      }
-    });
-
-    if (!matched && (participant.selected_day === 'DAY_2' || participant.selected_day === 'BOTH' || participant.selected_day === 'ALL')) {
-      const fallbackEvent = finalNonTechEvents[0];
-      if (fallbackEvent) {
-        const key = eventCountKey(fallbackEvent);
-        nonTechCounts.set(key, (nonTechCounts.get(key) || 0) + 1);
-      }
-    }
-  });
-
-  const totalNonTechRegistrations = Array.from(nonTechCounts.values()).reduce((sum, val) => sum + val, 0);
-  const nonTechSegments = finalNonTechEvents.map((event, index) => ({
-    label: event.name,
-    count: nonTechCounts.get(eventCountKey(event)) || 0,
-    percentage: percentageOf(nonTechCounts.get(eventCountKey(event)) || 0, totalNonTechRegistrations),
-    color: distinctColors[index % distinctColors.length],
-  })).filter((segment) => segment.count > 0 || totalNonTechRegistrations === 0);
-
-  const countByCategory = getDaySplitCounts(chartRegistrationSource);
-
-  const day1Total = countByCategory.tech;
-  const day2Total = countByCategory.nonTech;
-  const bothDayCount = countByCategory.both;
-  const specialTracksCount = countByCategory.special;
-
-  const specialEventCatalog = dedupeByCode([
-    ...(assignedSpecialEvents || []),
-    ...(allSpecialEvents || []),
-    ...((allDbEvents || []).filter((event) => String(event?.day || '').toUpperCase() === 'SPECIAL' || String(event?.type || '').toUpperCase() === 'SPECIAL')),
-  ]).filter(Boolean);
-
-  const specialSegments = specialEventCatalog.map((event, index) => {
-    const count = (chartRegistrationSource || []).filter((participant) => (participant.special_event_registrations || []).some((specialReg) => {
-      const target = specialReg.special_events || specialReg;
-      return String(target?.id || target?.code || target?.name || '').toLowerCase() === String(event.id || event.code || event.name || '').toLowerCase();
-    })).length;
+  const techSegments = finalTechEvents.map((ev, index) => {
+    const count = eventCounts.get(eventCountKey(ev)) || 0;
     return {
-      label: event.name,
+      label: ev.name,
       count,
-      percentage: percentageOf(count, Math.max(1, specialTracksCount || chartTotalCount || participants.length)),
+      percentage: percentageOf(count, totalTechRegistrations),
       color: distinctColors[index % distinctColors.length],
     };
-  }).filter((segment) => segment.count > 0 || specialTracksCount === 0);
+  });
 
-  const dailySegments = [
-    { label: 'Tech Events', count: day1Total, percentage: percentageOf(day1Total, Math.max(1, chartTotalCount)), color: '#00f0ff' },
-    { label: 'Non-Tech Events', count: day2Total, percentage: percentageOf(day2Total, Math.max(1, chartTotalCount)), color: '#f59e0b' },
-    { label: 'Both Days', count: bothDayCount, percentage: percentageOf(bothDayCount, Math.max(1, chartTotalCount)), color: '#a855f7' },
-    { label: 'Special Events', count: specialTracksCount, percentage: percentageOf(specialTracksCount, Math.max(1, chartTotalCount)), color: '#10b981' },
-  ].filter((segment) => segment.count > 0 || chartTotalCount === 0);
+  const finalNonTechEvents = getNonTechEvents();
+  const nonTechSelections = globalRegistrations.flatMap((registration) =>
+    (registration.selected_event_registrations || registration.event_registrations || [])
+      .filter((selection) => selection?.active !== false)
+  );
+  const { counts: nonTechCounts, total: totalNonTechRegistrations } = countSelectionsByEvent(
+    finalNonTechEvents,
+    nonTechSelections,
+    allDbEvents
+  );
+  const nonTechSegments = buildSegments(
+    finalNonTechEvents,
+    nonTechCounts,
+    totalNonTechRegistrations,
+    distinctColors
+  );
+
+  const canonicalSpecialEvents = [
+    { id: '3546a79b-ca1b-4d3b-8f04-bdd71b9bd9d9', code: 'TC', name: 'Thiruvizha Corner(Food Stall)', fee: 590 },
+    { id: '01524e69-6f8d-42b7-933e-6f4121681402', code: 'EP', name: 'Esports(Free Fire)', fee: 170 },
+    { id: 'f1420ddb-a778-4cd7-a93e-0e5e984af5c4', code: 'GD', name: 'Group Dance', fee: 500 },
+  ];
+
+  const allSpecialEventsCombined = dedupeByCode([
+    ...(allSpecialEvents || []),
+    ...canonicalSpecialEvents,
+  ]);
+
+  const totalSegments = [
+    { label: 'Tech Events', count: day1TechCount, percentage: percentageOf(day1TechCount, totalRegistrations), color: '#00f0ff' },
+    { label: 'Non-Tech Events', count: day2NonTechCount, percentage: percentageOf(day2NonTechCount, totalRegistrations), color: '#f59e0b' },
+    { label: 'Both Days', count: bothDayCount, percentage: percentageOf(bothDayCount, totalRegistrations), color: '#a855f7' },
+    { label: 'Special Events', count: specialTracksCount, percentage: percentageOf(specialTracksCount, totalRegistrations), color: '#10b981' },
+  ];
+
+  const specialSegments = allSpecialEventsCombined.map((event, index) => {
+    const matchingCount = globalRegistrations.filter((regItem) => (regItem.special_event_registrations || []).some((specialReg) => {
+      const target = specialReg.special_events || specialReg;
+      const targetStr = String(target?.id || target?.code || target?.name || '').toLowerCase();
+      const eventStr = String(event.id || event.code || event.name || '').toLowerCase();
+      return targetStr === eventStr || (event.code && targetStr.includes(event.code.toLowerCase()));
+    })).length;
+
+    return {
+      label: event.name,
+      count: matchingCount,
+      percentage: percentageOf(matchingCount, Math.max(1, specialTracksCount || globalRegistrations.length)),
+      color: distinctColors[index % distinctColors.length],
+    };
+  });
 
   const chartConfig = {
     TECH_BREAKDOWN: {
       title: 'Technical Events Distribution',
       subtitle: 'Breakdown of participants registered across technical competitions',
       segments: techSegments,
-      totalCount: overallTechCount,
-      totalLabel: 'Tech Total',
+      totalCount: totalTechRegistrations,
+      totalLabel: 'Total Tech',
     },
     NON_TECH_BREAKDOWN: {
       title: 'Non-Technical Events Distribution',
       subtitle: 'Breakdown of participants registered across non-technical events',
       segments: nonTechSegments,
       totalCount: totalNonTechRegistrations,
-      totalLabel: 'Non-Tech Total',
+      totalLabel: 'Total Non-Tech',
     },
     TOTAL_BREAKDOWN: {
       title: 'Day Split & Event Mix',
       subtitle: 'Tech, Non-Tech, both-day and special-event comparison across the symposium',
-      segments: dailySegments,
-      totalCount: chartTotalCount,
+      segments: totalSegments,
+      totalCount: totalRegistrations,
       totalLabel: 'Total Reg',
     },
     SPECIAL_BREAKDOWN: {
@@ -341,7 +336,7 @@ export default function CoordinatorDashboard() {
       subtitle: 'Breakdown of participants across premium workshops and special tracks',
       segments: specialSegments.length ? specialSegments : [{ label: 'No Special Event', count: 0, percentage: 0, color: '#10b981' }],
       totalCount: specialTracksCount,
-      totalLabel: 'Special Total',
+      totalLabel: 'Total Special',
     },
   };
 
@@ -515,13 +510,13 @@ export default function CoordinatorDashboard() {
             totalLabel={activeChart.totalLabel}
             segments={activeChart.segments}
             rightElement={
-              <div className="inline-flex flex-wrap p-1 bg-[#131024] border border-[#2e2652] rounded-xl text-xs gap-1 shadow-sm">
+              <div className="inline-flex flex-wrap items-center gap-1.5 p-1 bg-[#131024] border border-[#2e2652] rounded-xl text-xs shadow-sm">
                 <button
                   type="button"
                   onClick={() => setChartView('TECH_BREAKDOWN')}
                   className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                     chartView === 'TECH_BREAKDOWN'
-                      ? 'bg-gradient-to-r from-purple-700 to-indigo-600 text-white shadow-glow'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.45)]'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -532,7 +527,7 @@ export default function CoordinatorDashboard() {
                   onClick={() => setChartView('NON_TECH_BREAKDOWN')}
                   className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                     chartView === 'NON_TECH_BREAKDOWN'
-                      ? 'bg-gradient-to-r from-purple-700 to-indigo-600 text-white shadow-glow'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.45)]'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -543,7 +538,7 @@ export default function CoordinatorDashboard() {
                   onClick={() => setChartView('TOTAL_BREAKDOWN')}
                   className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                     chartView === 'TOTAL_BREAKDOWN'
-                      ? 'bg-gradient-to-r from-purple-700 to-indigo-600 text-white shadow-glow'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.45)]'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -554,7 +549,7 @@ export default function CoordinatorDashboard() {
                   onClick={() => setChartView('SPECIAL_BREAKDOWN')}
                   className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
                     chartView === 'SPECIAL_BREAKDOWN'
-                      ? 'bg-gradient-to-r from-purple-700 to-indigo-600 text-white shadow-glow'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.45)]'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >

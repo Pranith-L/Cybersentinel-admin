@@ -13,14 +13,14 @@ describe('getChartRegistrationSource', () => {
     })).toBe(globalData);
   });
 
-  it('does not fall back to coordinator-only data when system events are known but a global registration set is unavailable', () => {
+  it('falls back to coordinator-scoped data when global registration set is unavailable', () => {
     const coordinatorData = [{ id: 'c-1' }];
 
     expect(getChartRegistrationSource({
       allEventParticipants: [],
       participants: coordinatorData,
       allDbEvents: [{ id: 'e-1' }],
-    })).toEqual([]);
+    })).toEqual(coordinatorData);
   });
 
   it('uses coordinator data only when no system event catalog is available', () => {
