@@ -508,6 +508,18 @@ export async function assignEventToCoordinator({ coordinatorId, assignmentValue 
 
 // Teams
 export async function getTeams() {
+  try {
+    const res = await fetch('/api/coordinator-teams');
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json?.teams) && json.teams.length > 0) {
+        return json.teams;
+      }
+    }
+  } catch (apiErr) {
+    console.warn('API /api/coordinator-teams fallback in getTeams:', apiErr);
+  }
+
   const { data, error } = await supabase
     .from('team_summary')
     .select('*')
@@ -518,13 +530,25 @@ export async function getTeams() {
 
   const teams = await Promise.all(
     (data || []).map(async (t) => {
-      const { data: members } = await supabase
-        .from('team_members')
-        .select('member_role, registrations(registration_code, participants(name, phone, email))')
-        .eq('team_id', t.id);
+      const [{ data: pkgRows }, { data: members }] = await Promise.all([
+        supabase
+          .from('event_team_packages')
+          .select('event_id, events(id, code, name)')
+          .eq('team_id', t.id),
+        supabase
+          .from('team_members')
+          .select('member_role, registrations(registration_code, participants(name, phone, email))')
+          .eq('team_id', t.id),
+      ]);
+
+      const packageEvents = (pkgRows || []).map((r) => r.events).filter(Boolean);
 
       return {
         ...t,
+        package_events: packageEvents,
+        package_event_ids: (pkgRows || []).map((r) => r.event_id).filter(Boolean),
+        package_event_codes: packageEvents.map((e) => (e.code || '').toUpperCase()),
+        package_event_names: packageEvents.map((e) => (e.name || '').toLowerCase()),
         team_members: (members || []).map((m) => ({
           role: m.member_role,
           cs_id: m.registrations?.registration_code,

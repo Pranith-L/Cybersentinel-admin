@@ -1,11 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getTeams, createTeam, getEvents } from '../../services/adminService';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Modal } from '../../components/common/Modal';
 import { DetailsModal } from '../../components/common/DetailsModal';
 import { useToast } from '../../context/ToastContext';
 import { buildTeamConfirmationGmailLink } from '../../utils/helpers';
-import { Users2, Plus, Eye, RefreshCw, ShieldCheck, Phone, Mail, Crown, User } from 'lucide-react';
+import {
+  Users2,
+  Plus,
+  Eye,
+  RefreshCw,
+  ShieldCheck,
+  Phone,
+  Mail,
+  Crown,
+  User,
+  Search,
+  Filter,
+  Layers,
+} from 'lucide-react';
 
 export function AdminTeams() {
   const { addToast } = useToast();
@@ -13,6 +26,10 @@ export function AdminTeams() {
   const [teams, setTeams] = useState([]);
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [eventFilter, setEventFilter] = useState('ALL');
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeDetails, setActiveDetails] = useState(null);
@@ -84,6 +101,55 @@ export function AdminTeams() {
     }
   }
 
+  const filteredTeams = useMemo(() => {
+    return teams.filter((t) => {
+      const q = search.trim().toLowerCase();
+      const code = (t.team_code || '').toLowerCase();
+      const name = (t.team_name || '').toLowerCase();
+      const leaderCode = (t.team_leader_registration_code || '').toLowerCase();
+      const leaderName = (t.team_leader_name || '').toLowerCase();
+
+      const memberMatch = (t.team_members || []).some(
+        (m) =>
+          (m.name || '').toLowerCase().includes(q) ||
+          (m.cs_id || '').toLowerCase().includes(q) ||
+          (m.phone || '').toLowerCase().includes(q) ||
+          (m.email || '').toLowerCase().includes(q)
+      );
+
+      const matchesSearch =
+        !q ||
+        code.includes(q) ||
+        name.includes(q) ||
+        leaderCode.includes(q) ||
+        leaderName.includes(q) ||
+        memberMatch;
+
+      const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter;
+
+      const matchesEvent =
+        eventFilter === 'ALL' ||
+        t.event_id === eventFilter ||
+        (t.event_code || '').toUpperCase() === (eventFilter || '').toUpperCase() ||
+        (Array.isArray(t.package_event_ids) && t.package_event_ids.includes(eventFilter)) ||
+        (Array.isArray(t.package_event_codes) && t.package_event_codes.includes((eventFilter || '').toUpperCase())) ||
+        (Array.isArray(t.package_events) &&
+          t.package_events.some(
+            (e) => e.id === eventFilter || (e.code || '').toUpperCase() === (eventFilter || '').toUpperCase()
+          ));
+
+      return matchesSearch && matchesStatus && matchesEvent;
+    });
+  }, [teams, search, statusFilter, eventFilter]);
+
+  function getEventBadge(t) {
+    if (!t) return '—';
+    if (Array.isArray(t.package_events) && t.package_events.length > 0) {
+      return t.package_events.map((e) => e.name || e.code).join(' & ');
+    }
+    return t.event_name || t.event_code || t.event_id || '—';
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
@@ -109,6 +175,75 @@ export function AdminTeams() {
         </div>
       </div>
 
+      {/* Toolbar / Filters */}
+      <div className="glass-card p-4 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search team code, name, leader, phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="cyber-input pl-10 text-sm w-full"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className="relative">
+            <Filter className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="cyber-input pl-10 text-sm w-full"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="FORMING">Forming</option>
+              <option value="LOCKED">Locked</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
+
+          {/* Event Filter */}
+          <div className="relative">
+            <Layers className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <select
+              value={eventFilter}
+              onChange={(e) => setEventFilter(e.target.value)}
+              className="cyber-input pl-10 text-sm w-full"
+            >
+              <option value="ALL">All Events & Tracks</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.code} · {ev.name}
+                </option>
+              ))}
+              <option value="01524e69-6f8d-42b7-933e-6f4121681402">EP · Esports(Free Fire)</option>
+              <option value="f1420ddb-a778-4cd7-a93e-0e5e984af5c4">GD · Group Dance</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+          <span>Showing {filteredTeams.length} of {teams.length} total event teams</span>
+          {(search || statusFilter !== 'ALL' || eventFilter !== 'ALL') && (
+            <button
+              onClick={() => {
+                setSearch('');
+                setStatusFilter('ALL');
+                setEventFilter('ALL');
+              }}
+              className="text-brand-cyan hover:underline"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Teams Table */}
       <div className="table-container">
         <table>
@@ -129,8 +264,8 @@ export function AdminTeams() {
                   Loading teams...
                 </td>
               </tr>
-            ) : teams.length ? (
-              teams.map((t) => (
+            ) : filteredTeams.length ? (
+              filteredTeams.map((t) => (
                 <tr key={t.id || t.team_code}>
                   <td>
                     <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1rem', color: 'var(--accent-cyan)' }}>
@@ -143,7 +278,7 @@ export function AdminTeams() {
 
                   <td>
                     <span className="badge-outline" style={{ fontSize: '0.8rem', color: '#93c5fd' }}>
-                      {t.event_name || '—'}
+                      {getEventBadge(t)}
                     </span>
                   </td>
 
@@ -250,7 +385,7 @@ export function AdminTeams() {
             ) : (
               <tr>
                 <td colSpan="6" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-dim)' }}>
-                  No teams registered.
+                  No teams found.
                 </td>
               </tr>
             )}
@@ -327,7 +462,28 @@ export function AdminTeams() {
       </Modal>
 
       {/* Details Modal */}
-      <DetailsModal isOpen={Boolean(activeDetails)} onClose={() => setActiveDetails(null)} data={activeDetails} title="Team Roster & Information" />
+      <DetailsModal
+        isOpen={Boolean(activeDetails)}
+        onClose={() => setActiveDetails(null)}
+        data={
+          activeDetails
+            ? {
+                team_code: activeDetails.team_code,
+                team_name: activeDetails.team_name,
+                event: getEventBadge(activeDetails),
+                status: activeDetails.status,
+                leader_cs_id: activeDetails.team_leader_registration_code || 'N/A',
+                leader_name: activeDetails.team_leader_name || 'N/A',
+                members_count: `${(activeDetails.team_members || []).length} / ${activeDetails.max_members || '—'}`,
+                members_roster:
+                  (activeDetails.team_members || [])
+                    .map((m) => `${m.role === 'LEADER' ? '👑 ' : ''}${m.name || 'Member'} (${m.cs_id || 'ID missing'})`)
+                    .join('; ') || 'No members joined yet',
+              }
+            : null
+        }
+        title="Team Roster & Information"
+      />
     </div>
   );
 }
