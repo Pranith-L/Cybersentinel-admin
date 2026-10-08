@@ -16,8 +16,14 @@ update public.payments p
     select gateway.transaction_id
       from public.payment_responses gateway
      where lower(btrim(gateway.email)) = lower(btrim(part.email))
-       and regexp_replace(gateway.contact, '\D', '', 'g')
-         = regexp_replace(part.phone, '\D', '', 'g')
+       and (
+         regexp_replace(gateway.contact, '\D', '', 'g') = regexp_replace(part.phone, '\D', '', 'g')
+         or (
+           length(regexp_replace(gateway.contact, '\D', '', 'g')) >= 10
+           and length(regexp_replace(part.phone, '\D', '', 'g')) >= 10
+           and right(regexp_replace(gateway.contact, '\D', '', 'g'), 10) = right(regexp_replace(part.phone, '\D', '', 'g'), 10)
+         )
+       )
        and gateway.transaction_id is not null
      order by gateway.payment_datetime desc nulls last
      limit 1
@@ -40,8 +46,14 @@ begin
       join public.participants part on part.id = reg.participant_id
       join public.payment_responses r
         on lower(btrim(r.email)) = lower(btrim(part.email))
-       and regexp_replace(r.contact, '\D', '', 'g')
-         = regexp_replace(part.phone, '\D', '', 'g')
+       and (
+         regexp_replace(r.contact, '\D', '', 'g') = regexp_replace(part.phone, '\D', '', 'g')
+         or (
+           length(regexp_replace(r.contact, '\D', '', 'g')) >= 10
+           and length(regexp_replace(part.phone, '\D', '', 'g')) >= 10
+           and right(regexp_replace(r.contact, '\D', '', 'g'), 10) = right(regexp_replace(part.phone, '\D', '', 'g'), 10)
+         )
+       )
      where reg.id = new.registration_id
      order by r.payment_datetime desc
      limit 1;
@@ -74,8 +86,14 @@ begin
      where p.registration_id = reg.id
        and p.utr is null
        and lower(btrim(part.email)) = lower(btrim(new.email))
-       and regexp_replace(part.phone, '\D', '', 'g')
-         = regexp_replace(new.contact, '\D', '', 'g');
+       and (
+         regexp_replace(part.phone, '\D', '', 'g') = regexp_replace(new.contact, '\D', '', 'g')
+         or (
+           length(regexp_replace(part.phone, '\D', '', 'g')) >= 10
+           and length(regexp_replace(new.contact, '\D', '', 'g')) >= 10
+           and right(regexp_replace(part.phone, '\D', '', 'g'), 10) = right(regexp_replace(new.contact, '\D', '', 'g'), 10)
+         )
+       );
   end if;
 
   return new;
