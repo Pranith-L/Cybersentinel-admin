@@ -41,17 +41,35 @@ export default function CoordinatorTeams() {
   const loadData = async () => {
     try {
       setRefreshing(true);
-      const coordId = user?.id || coordinatorProfile?.id;
-      let normalEvents = [];
+      const coordId = coordinatorProfile?.id || user?.id || coordinatorProfile?.email || user?.email;
+      let assigned = [];
       if (coordId) {
         try {
           const eventsData = await getCoordinatorAssignedEvents(client, coordId);
-          normalEvents = eventsData.normalEvents || [];
+          assigned = [
+            ...(eventsData.normalEvents || []),
+            ...(eventsData.specialEvents || []),
+          ];
         } catch (evErr) {
           console.warn('Coordinator teams events error:', evErr);
         }
       }
-      setAssignedEvents(normalEvents);
+
+      if (assigned.length === 0 && coordinatorProfile) {
+        if (Array.isArray(coordinatorProfile.assigned_events) && coordinatorProfile.assigned_events.length > 0) {
+          assigned = coordinatorProfile.assigned_events;
+        } else if (coordinatorProfile.event_code) {
+          assigned = [
+            {
+              id: coordinatorProfile.event_id || null,
+              code: coordinatorProfile.event_code,
+              name: coordinatorProfile.event_name || coordinatorProfile.event_code,
+            },
+          ];
+        }
+      }
+
+      setAssignedEvents(assigned);
 
       const allTeams = await getCoordinatorTeams(client).catch(() => []);
       setTeams(allTeams || []);
@@ -68,20 +86,70 @@ export default function CoordinatorTeams() {
   }, []);
 
   const assignedEventIds = useMemo(() => {
-    return new Set(assignedEvents.map((e) => e.id));
+    return new Set(assignedEvents.map((e) => e.id).filter(Boolean));
   }, [assignedEvents]);
 
   const assignedEventCodes = useMemo(() => {
-    return new Set(assignedEvents.map((e) => (e.code || '').toUpperCase()));
+    return new Set(assignedEvents.map((e) => (e.code || '').toUpperCase()).filter(Boolean));
   }, [assignedEvents]);
+
+  const assignedEventNames = useMemo(() => {
+    return new Set(assignedEvents.map((e) => (e.name || '').toLowerCase().trim()).filter(Boolean));
+  }, [assignedEvents]);
+
+  const getDisplayEventName = (team) => {
+    if (!team) return '—';
+
+    if (eventFilter !== 'ALL') {
+      const selectedEv = assignedEvents.find(
+        (e) => e.id === eventFilter || (e.code || '').toUpperCase() === eventFilter.toUpperCase()
+      );
+      if (selectedEv) return selectedEv.name || selectedEv.code;
+    }
+
+    if (assignedEvents.length > 0) {
+      if (Array.isArray(team.package_events) && team.package_events.length > 0) {
+        const pkgMatch = team.package_events.find(
+          (pe) =>
+            (pe.id && assignedEventIds.has(pe.id)) ||
+            (pe.code && assignedEventCodes.has((pe.code || '').toUpperCase())) ||
+            (pe.name && assignedEventNames.has((pe.name || '').toLowerCase().trim()))
+        );
+        if (pkgMatch?.name) return pkgMatch.name;
+      }
+
+      if (
+        (team.event_id && assignedEventIds.has(team.event_id)) ||
+        (team.event_code && assignedEventCodes.has((team.event_code || '').toUpperCase())) ||
+        (team.event_name && assignedEventNames.has((team.event_name || '').toLowerCase().trim()))
+      ) {
+        return team.event_name || team.event_code;
+      }
+    }
+
+    return team.event_name || team.event_code || team.event_id || '—';
+  };
 
   const filtered = useMemo(() => {
     return teams.filter((t) => {
       // Must belong to one of the coordinator's assigned events unless coordinator has no specific event filter
-      if (assignedEventIds.size > 0) {
-        const matchesById = t.event_id && assignedEventIds.has(t.event_id);
-        const matchesByCode = t.event_code && assignedEventCodes.has((t.event_code || '').toUpperCase());
-        if (!matchesById && !matchesByCode) {
+      if (assignedEvents.length > 0) {
+        const primaryMatch =
+          (t.event_id && assignedEventIds.has(t.event_id)) ||
+          (t.event_code && assignedEventCodes.has((t.event_code || '').toUpperCase())) ||
+          (t.event_name && assignedEventNames.has((t.event_name || '').toLowerCase().trim()));
+
+        const pkgMatch =
+          (Array.isArray(t.package_event_ids) && t.package_event_ids.some((id) => assignedEventIds.has(id))) ||
+          (Array.isArray(t.package_event_codes) && t.package_event_codes.some((code) => assignedEventCodes.has(code.toUpperCase()))) ||
+          (Array.isArray(t.package_event_names) && t.package_event_names.some((name) => assignedEventNames.has(name.toLowerCase().trim()))) ||
+          (Array.isArray(t.package_events) && t.package_events.some((pe) =>
+            (pe.id && assignedEventIds.has(pe.id)) ||
+            (pe.code && assignedEventCodes.has((pe.code || '').toUpperCase())) ||
+            (pe.name && assignedEventNames.has((pe.name || '').toLowerCase().trim()))
+          ));
+
+        if (!primaryMatch && !pkgMatch) {
           return false;
         }
       }
@@ -95,7 +163,9 @@ export default function CoordinatorTeams() {
       const memberMatch = (t.team_members || []).some(
         (m) =>
           (m.name || '').toLowerCase().includes(q) ||
-          (m.cs_id || '').toLowerCase().includes(q)
+          (m.cs_id || '').toLowerCase().includes(q) ||
+          (m.phone || '').toLowerCase().includes(q) ||
+          (m.email || '').toLowerCase().includes(q)
       );
 
       const matchesSearch =
@@ -110,11 +180,13 @@ export default function CoordinatorTeams() {
       const matchesEvent =
         eventFilter === 'ALL' ||
         t.event_id === eventFilter ||
-        (t.event_code || '').toUpperCase() === (eventFilter || '').toUpperCase();
+        (t.event_code || '').toUpperCase() === (eventFilter || '').toUpperCase() ||
+        (Array.isArray(t.package_event_ids) && t.package_event_ids.includes(eventFilter)) ||
+        (Array.isArray(t.package_event_codes) && t.package_event_codes.includes((eventFilter || '').toUpperCase()));
 
       return matchesSearch && matchesStatus && matchesEvent;
     });
-  }, [teams, assignedEventIds, assignedEventCodes, search, statusFilter, eventFilter]);
+  }, [teams, assignedEvents, assignedEventIds, assignedEventCodes, assignedEventNames, search, statusFilter, eventFilter]);
 
   return (
     <div className="space-y-6">
@@ -245,7 +317,7 @@ export default function CoordinatorTeams() {
                       </td>
                       <td>
                         <span className="badge-outline text-xs">
-                          {team.event_name || team.event_id || '—'}
+                          {getDisplayEventName(team)}
                         </span>
                       </td>
                       <td>
@@ -372,7 +444,7 @@ export default function CoordinatorTeams() {
           data={{
             team_code: selectedTeam.team_code,
             team_name: selectedTeam.team_name,
-            event: selectedTeam.event_name || selectedTeam.event_id,
+            event: getDisplayEventName(selectedTeam),
             status: selectedTeam.status,
             leader_cs_id: selectedTeam.team_leader_registration_code,
             leader_name: selectedTeam.team_leader_name || 'N/A',

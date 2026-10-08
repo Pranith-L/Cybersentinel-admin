@@ -7,17 +7,21 @@ import {
 import { cachedRequest } from '../utils/requestCache';
 
 export const KNOWN_COORDINATOR_ASSIGNMENTS = {
-  'PP@gmail.com': [{ id: 'PP', code: 'PP', name: 'Paper Presentation', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
-  'paper@gmail.com': [{ id: 'PP', code: 'PP', name: 'Paper Presentation', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
-  'UN@gmail.com': [{ id: 'UN', code: 'UN', name: 'Unsaid', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
-  'CC@gmail.com': [{ id: 'CC', code: 'CC', name: 'Cipher Coding', day: 'DAY_1', event_type: 'INDIVIDUAL', venue: 'Main Auditorium' }],
-  'WE@gmail.com': [{ id: 'WE', code: 'WE', name: 'Weblica', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
-  'XC@gmail.com': [{ id: 'XC', code: 'XC', name: 'Xcoders', day: 'DAY_1', event_type: 'INDIVIDUAL', venue: 'Main Auditorium' }],
-  'SP@gmail.com': [{ id: 'SP', code: 'SP', name: 'Spotlight', day: 'DAY_2', event_type: 'INDIVIDUAL', venue: 'Main Auditorium' }],
-  'CO@gmail.com': [{ id: 'CO', code: 'CO', name: 'Connections', day: 'DAY_2', event_type: 'TEAM', venue: 'Main Auditorium' }],
-  'FTB@gmail.com': [{ id: 'FTB', code: 'FTB', name: 'Find the BGM', day: 'DAY_2', event_type: 'TEAM', venue: 'Main Auditorium' }],
-  'MS@gmail.com': [{ id: 'MS', code: 'MS', name: 'Mixed Signals', day: 'DAY_2', event_type: 'TEAM', venue: 'Main Auditorium' }],
-  'LIL@gmail.com': [{ id: 'LIL', code: 'LIL', name: 'Lost in Lyrics', day: 'DAY_2', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'PP@gmail.com': [{ id: '45b38b2c-62fd-47d0-b1e0-ecf7d303975a', code: 'PP', name: 'Paper Presentation', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'paper@gmail.com': [{ id: '45b38b2c-62fd-47d0-b1e0-ecf7d303975a', code: 'PP', name: 'Paper Presentation', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'UN@gmail.com': [{ id: '126a8f8a-bcca-4cfe-8c87-03b76f6856bf', code: 'US', name: 'Unsaid', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'CC@gmail.com': [{ id: '1c2a1677-1a35-47a3-88c7-25102420c9ff', code: 'CCD', name: 'Cipher Coding', day: 'DAY_1', event_type: 'INDIVIDUAL', venue: 'Main Auditorium' }],
+  'WE@gmail.com': [{ id: '3c24cc1d-90a2-4b28-a729-0ec7050875f6', code: 'WB', name: 'Weblica', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'XC@gmail.com': [{ id: '1d1c74d9-eaa0-4ed3-8f84-a4ab1560d347', code: 'XC', name: 'Xcoders', day: 'DAY_1', event_type: 'INDIVIDUAL', venue: 'Main Auditorium' }],
+  'SP@gmail.com': [{ id: '594100e9-a893-457c-a8aa-110fd14e7e6a', code: 'SL', name: 'Spotlight', day: 'DAY_2', event_type: 'INDIVIDUAL', venue: 'Main Auditorium' }],
+  'CO@gmail.com': [{ id: '67d10e82-e041-41e9-8f4c-4fa9d5c12140', code: 'CC', name: 'Connections', day: 'DAY_2', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'FTB@gmail.com': [{ id: 'a711c4ce-4def-4dba-a198-44cfb1f30bd1', code: 'FB', name: 'Find the BGM', day: 'DAY_2', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'MS@gmail.com': [{ id: 'd5d902eb-4cc6-4fd3-9baf-c66b1ceb31dc', code: 'MS', name: 'Mixed Signals', day: 'DAY_2', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'LIL@gmail.com': [{ id: '53ad53ef-0d03-4e46-9aa3-9c6a59d67911', code: 'LL', name: 'Lost in Lyrics', day: 'DAY_2', event_type: 'TEAM', venue: 'Main Auditorium' }],
+  'GD@gmail.com': [{ id: 'f1420ddb-a778-4cd7-a93e-0e5e984af5c4', code: 'GD', name: 'Group Dance', fee: 500 }],
+  'TC@gmail.com': [{ id: '3546a79b-ca1b-4d3b-8f04-bdd71b9bd9d9', code: 'TC', name: 'Thiruvizha Corner(Food Stall)', fee: 590 }],
+  'FF@gmail.com': [{ id: '01524e69-6f8d-42b7-933e-6f4121681402', code: 'EP', name: 'Esports(Free Fire)', fee: 170 }],
+  'esports@cybersentinel.in': [{ id: '01524e69-6f8d-42b7-933e-6f4121681402', code: 'EP', name: 'Esports(Free Fire)', fee: 170 }],
 };
 
 export function getKnownCoordinatorAssignmentsById(coordinatorId) {
@@ -375,6 +379,18 @@ export async function rejectCoordinatorPayment(client, registrationId, reason, u
 }
 
 export async function getCoordinatorTeams(client) {
+  try {
+    const res = await fetch('/api/coordinator-teams');
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json?.teams) && json.teams.length > 0) {
+        return json.teams;
+      }
+    }
+  } catch (apiErr) {
+    console.warn('API /api/coordinator-teams fallback to client:', apiErr);
+  }
+
   const { data, error } = await client.from('team_summary').select('*');
   if (error) throw error;
 
@@ -390,14 +406,29 @@ export async function getCoordinatorTeams(client) {
         if (et?.event_id) eventId = et.event_id;
       }
 
-      const { data: members } = await client
-        .from('team_members')
-        .select('member_role, registrations(registration_code, participants(name, phone, email))')
-        .eq('team_id', team.id);
+      const [{ data: pkgRows }, { data: members }] = await Promise.all([
+        client
+          .from('event_team_packages')
+          .select('event_id, events(id, code, name)')
+          .eq('team_id', team.id),
+        client
+          .from('team_members')
+          .select('member_role, registrations(registration_code, participants(name, phone, email))')
+          .eq('team_id', team.id),
+      ]);
+
+      const packageEvents = (pkgRows || []).map((r) => r.events).filter(Boolean);
+      const packageEventIds = (pkgRows || []).map((r) => r.event_id).filter(Boolean);
+      const packageEventCodes = packageEvents.map((e) => (e.code || '').toUpperCase());
+      const packageEventNames = packageEvents.map((e) => (e.name || '').toLowerCase());
 
       return {
         ...team,
         event_id: eventId,
+        package_events: packageEvents,
+        package_event_ids: packageEventIds,
+        package_event_codes: packageEventCodes,
+        package_event_names: packageEventNames,
         team_members: (members || []).map((m) => ({
           role: m.member_role,
           cs_id: m.registrations?.registration_code,

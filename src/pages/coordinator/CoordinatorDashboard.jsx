@@ -170,26 +170,42 @@ export default function CoordinatorDashboard() {
 
   const canonicalDay1Events = [
     { id: 'PP', code: 'PP', name: 'Paper Presentation', day: 'DAY_1' },
-    { id: 'UN', code: 'UN', name: 'Unsaid', day: 'DAY_1' },
-    { id: 'CC', code: 'CC', name: 'Cipher Coding', day: 'DAY_1' },
-    { id: 'WE', code: 'WE', name: 'Weblica', day: 'DAY_1' },
+    { id: 'US', code: 'US', name: 'Unsaid', day: 'DAY_1' },
+    { id: 'CCD', code: 'CCD', name: 'Cipher Coding', day: 'DAY_1' },
+    { id: 'WB', code: 'WB', name: 'Weblica', day: 'DAY_1' },
     { id: 'XC', code: 'XC', name: 'Xcoders', day: 'DAY_1' },
   ];
 
   const dedupeByCode = (items = []) => {
-    const seen = new Map();
+    const seenCodes = new Set();
+    const seenNames = new Set();
+    const results = [];
+
     items.forEach((event) => {
-      const key = (event?.code || event?.id || event?.name || '').toString().trim().toUpperCase();
-      if (!key || seen.has(key)) return;
-      seen.set(key, {
+      const codeKey = (event?.code || '').toString().trim().toUpperCase();
+      const rawName = (event?.name || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const idKey = (event?.id || '').toString().trim().toLowerCase();
+
+      // Normalize name for matching across aliases (e.g. xcoders vs x coders)
+      const normalizedName = rawName.replace(/xcoders|xcoder/, 'xcoders');
+
+      if ((codeKey && seenCodes.has(codeKey)) || (normalizedName && seenNames.has(normalizedName))) {
+        return;
+      }
+
+      if (codeKey) seenCodes.add(codeKey);
+      if (normalizedName) seenNames.add(normalizedName);
+
+      results.push({
         ...event,
-        id: event?.id || key,
-        code: event?.code || key,
-        name: event?.name || key,
+        id: event?.id || codeKey || idKey,
+        code: event?.code || codeKey,
+        name: event?.name || codeKey,
         day: event?.day || 'DAY_1',
       });
     });
-    return [...seen.values()];
+
+    return results;
   };
 
   const systemTechEvents = dedupeByCode([

@@ -20,6 +20,10 @@ const KNOWN_COORDINATOR_ACCOUNTS = [
   { email: 'MS@gmail.com', password: 'Cybersentinel@nonMS' },
   { email: 'LIL@gmail.com', password: 'Cybersentinel@nonLIL' },
   { email: 'TC@gmail.com', password: 'Cybersentinel@nonTC' },
+  { email: 'FF@gmail.com', password: 'Cybersentinel@nonFF' },
+  { email: 'FF@gmail.com', password: 'Cybersentinel@techFF' },
+  { email: 'esports@cybersentinel.in', password: 'Cybersentinel@nonFF' },
+  { email: 'esports@cybersentinel.in', password: 'Cybersentinel@techFF' },
 ];
 
 export function AuthProvider({ children }) {

@@ -93,6 +93,8 @@ export default function AdminLogin({ defaultRole = 'ADMIN' }) {
       'MS@gmail.com',
       'LIL@gmail.com',
       'TC@gmail.com',
+      'FF@gmail.com',
+      'esports@cybersentinel.in',
     ];
 
     if (knownCoordinatorEmails.some((known) => known.toLowerCase() === lowerEmail)) {
