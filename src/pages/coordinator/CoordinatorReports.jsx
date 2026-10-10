@@ -7,6 +7,8 @@ import {
   exportCoordinatorParticipantsPdfReport,
   exportCoordinatorAttendanceReport,
   exportCoordinatorAttendancePdfReport,
+  exportCoordinatorTeamAttendanceReport,
+  exportCoordinatorTeamAttendancePdfReport,
 } from '../../services/reportService';
 import {
   FileSpreadsheet,
@@ -17,6 +19,7 @@ import {
   RefreshCw,
   Layers,
   Shield,
+  Award,
 } from 'lucide-react';
 
 export default function CoordinatorReports() {
@@ -136,6 +139,43 @@ export default function CoordinatorReports() {
     }
   };
 
+  // 3. Team Attendance Sheet Handlers
+  const handleExportTeamAttendancePdf = async () => {
+    try {
+      setExportingType('team-attendance-pdf');
+      await exportCoordinatorTeamAttendancePdfReport(
+        client,
+        assignedEvents,
+        assignedSpecialEvents,
+        coordinatorInfo
+      );
+      addToast('Coordinator Team Attendance PDF generated successfully!', 'success');
+    } catch (err) {
+      console.error(err);
+      addToast(err.message || 'Failed to export team attendance PDF', 'error');
+    } finally {
+      setExportingType(null);
+    }
+  };
+
+  const handleExportTeamAttendanceCsv = async () => {
+    try {
+      setExportingType('team-attendance-csv');
+      await exportCoordinatorTeamAttendanceReport(
+        client,
+        assignedEvents,
+        assignedSpecialEvents,
+        coordinatorInfo
+      );
+      addToast('Coordinator Team Attendance Excel Sheet (.CSV) downloaded!', 'success');
+    } catch (err) {
+      console.error(err);
+      addToast(err.message || 'Failed to export team attendance Excel sheet', 'error');
+    } finally {
+      setExportingType(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -149,7 +189,7 @@ export default function CoordinatorReports() {
           <span>Coordinator Reports & PDF Exports</span>
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Export verified participant rosters and live attendance accreditation sheets scoped to your assigned events.
+          Export verified participant rosters, live individual attendance sheets, and official team attendance accreditation reports scoped to your assigned events.
         </p>
       </div>
 
@@ -177,8 +217,8 @@ export default function CoordinatorReports() {
       </div>
 
       {/* Export Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Participants Export */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Card 1: Participants Export */}
         <div className="glass-card p-6 flex flex-col justify-between space-y-4 hover:border-brand-cyan/40 transition-all">
           <div className="space-y-3">
             <div className="w-12 h-12 rounded-xl bg-brand-cyan/10 border border-brand-cyan/30 flex items-center justify-center text-brand-cyan">
@@ -235,7 +275,7 @@ export default function CoordinatorReports() {
           </div>
         </div>
 
-        {/* Attendance Export */}
+        {/* Card 2: Individual Attendance Export */}
         <div className="glass-card p-6 flex flex-col justify-between space-y-4 hover:border-brand-purple/40 transition-all">
           <div className="space-y-3">
             <div className="w-12 h-12 rounded-xl bg-brand-purple/10 border border-brand-purple/30 flex items-center justify-center text-brand-purple">
@@ -245,7 +285,7 @@ export default function CoordinatorReports() {
               Event Attendance Accreditation Sheet
             </h3>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Export verified check-in data for your assigned tracks including CS-ID, Participant Name, Institution, Check-In Time, and Attendance status (PRESENT/ABSENT).
+              Export verified individual check-in data for your assigned tracks including CS-ID, Participant Name, Institution, Check-In Time, and Attendance status (PRESENT/ABSENT).
             </p>
           </div>
 
@@ -288,6 +328,63 @@ export default function CoordinatorReports() {
                 <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               )}
               <span>Download Attendance Excel (.CSV)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Card 3: Team Attendance Export */}
+        <div className="glass-card p-6 flex flex-col justify-between space-y-4 hover:border-pink-500/40 transition-all">
+          <div className="space-y-3">
+            <div className="w-12 h-12 rounded-xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400">
+              <Award className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold font-heading text-white">
+              Official Team Attendance Report
+            </h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Export verified team check-in and attendance report for registered teams across Day 1 & Day 2 events (PP, US, FB, MS, CC, LL) including Team Name, Leader, Member Roster, College, Event, Day, and Timestamp.
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-white/[0.08] space-y-3">
+            {/* Primary Team PDF Button */}
+            <button
+              id="download-team-attendance-pdf-btn"
+              onClick={handleExportTeamAttendancePdf}
+              disabled={loading || exportingType === 'team-attendance-pdf'}
+              className="w-full py-2.5 px-4 rounded-xl font-bold font-heading text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-200 shadow-lg text-white hover:brightness-110 active:scale-[0.99] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.3) 0%, rgba(168, 85, 247, 0.25) 100%)',
+                border: '1.5px solid rgba(236, 72, 153, 0.55)',
+                boxShadow: '0 0 15px rgba(236, 72, 153, 0.25)',
+              }}
+            >
+              {exportingType === 'team-attendance-pdf' ? (
+                <RefreshCw className="w-4 h-4 animate-spin text-pink-300" />
+              ) : (
+                <FileText className="w-4 h-4 text-pink-300" />
+              )}
+              <span>Download Team Attendance PDF</span>
+            </button>
+
+            {/* Excel Team Form Button */}
+            <button
+              id="download-team-attendance-excel-btn"
+              onClick={handleExportTeamAttendanceCsv}
+              disabled={loading || exportingType === 'team-attendance-csv'}
+              className="w-full py-2.5 px-4 rounded-xl font-bold font-heading text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all duration-200 shadow-lg text-white hover:brightness-110 active:scale-[0.99] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.28) 0%, rgba(5, 150, 105, 0.22) 100%)',
+                border: '1.5px solid rgba(16, 185, 129, 0.55)',
+                boxShadow: '0 0 15px rgba(16, 185, 129, 0.25)',
+              }}
+            >
+              {exportingType === 'team-attendance-csv' ? (
+                <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              )}
+              <span>Download Team Attendance Excel (.CSV)</span>
             </button>
           </div>
         </div>

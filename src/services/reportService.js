@@ -1,8 +1,8 @@
 import { supabase } from '../config/supabase';
-import { downloadCsv } from '../utils/helpers';
+import { downloadCsv, formatDate } from '../utils/helpers';
 import { generateCyberPdfReport } from '../utils/pdfReportGenerator';
 import { applyRegistrationOverrides, applyPaymentOverrides } from '../utils/statusStore';
-import { getCoordinatorParticipants } from './coordinatorService';
+import { getCoordinatorParticipants, getCoordinatorTeams } from './coordinatorService';
 
 /**
  * 1. REGISTRATIONS ROSTER (CSV & PDF)
@@ -773,3 +773,215 @@ export async function exportCoordinatorAttendancePdfReport(
     filename: `coordinator-attendance-${new Date().toISOString().slice(0, 10)}.pdf`,
   });
 }
+
+/**
+ * 8. COORDINATOR TEAM ATTENDANCE REPORT (CSV & PDF)
+ */
+export async function getCoordinatorScopedTeamAttendanceData(client, assignedEvents = [], assignedSpecialEvents = []) {
+  let normalEvents = assignedEvents;
+  let specialEvents = assignedSpecialEvents;
+  if (Array.isArray(assignedEvents) && assignedEvents.length > 0 && typeof assignedEvents[0] === 'string') {
+    normalEvents = Array.isArray(assignedSpecialEvents) ? assignedSpecialEvents : [];
+    specialEvents = [];
+  }
+
+  const allAssigned = [...normalEvents, ...specialEvents];
+  const assignedEventIds = new Set(allAssigned.map((e) => e.id).filter(Boolean));
+  const assignedEventCodes = new Set(allAssigned.map((e) => (e.code || '').toUpperCase()).filter(Boolean));
+  const assignedEventNames = new Set(allAssigned.map((e) => (e.name || '').toLowerCase().trim()).filter(Boolean));
+
+  // 1. Fetch all coordinator teams
+  const allTeams = await getCoordinatorTeams(client).catch(() => []);
+
+  // 2. Filter teams that belong to coordinator's assigned team events
+  const matchingTeams = allTeams.filter((t) => {
+    if (allAssigned.length === 0) return true;
+    const directMatch =
+      (t.event_id && assignedEventIds.has(t.event_id)) ||
+      (t.event_code && assignedEventCodes.has((t.event_code || '').toUpperCase())) ||
+      (t.event_name && assignedEventNames.has((t.event_name || '').toLowerCase().trim()));
+
+    const pkgMatch =
+      (Array.isArray(t.package_event_ids) && t.package_event_ids.some((id) => assignedEventIds.has(id))) ||
+      (Array.isArray(t.package_event_codes) && t.package_event_codes.some((code) => assignedEventCodes.has(code.toUpperCase()))) ||
+      (Array.isArray(t.package_event_names) && t.package_event_names.some((name) => assignedEventNames.has(name.toLowerCase().trim()))) ||
+      (Array.isArray(t.package_events) && t.package_events.some((pe) =>
+        (pe.id && assignedEventIds.has(pe.id)) ||
+        (pe.code && assignedEventCodes.has((pe.code || '').toUpperCase())) ||
+        (pe.name && assignedEventNames.has((pe.name || '').toLowerCase().trim()))
+      ));
+
+    return directMatch || pkgMatch;
+  });
+
+  // 3. For each matching team, collect member registration IDs & colleges
+  const teamIds = matchingTeams.map((t) => t.id).filter(Boolean);
+  let memberDetailsMap = new Map();
+  if (client && teamIds.length > 0) {
+    try {
+      const { data: memberRows } = await client
+        .from('team_members')
+        .select('team_id, registration_id, member_role, registrations(id, registration_code, participants(name, college, department, phone, email))')
+        .in('team_id', teamIds);
+
+      (memberRows || []).forEach((row) => {
+        if (!memberDetailsMap.has(row.team_id)) {
+          memberDetailsMap.set(row.team_id, []);
+        }
+        memberDetailsMap.get(row.team_id).push({
+          registration_id: row.registration_id || row.registrations?.id,
+          name: row.registrations?.participants?.name || 'Participant',
+          college: row.registrations?.participants?.college || 'Vel Tech',
+          department: row.registrations?.participants?.department || 'CSE',
+          role: row.member_role,
+          cs_id: row.registrations?.registration_code || '',
+        });
+      });
+    } catch (mErr) {
+      console.warn('Team members query notice:', mErr);
+    }
+  }
+
+  // 4. Fetch attendance records for the assigned events
+  const eventIds = Array.from(assignedEventIds);
+  let attendanceMap = new Map();
+  if (client && eventIds.length > 0) {
+    try {
+      const { data: attList } = await client
+        .from('attendance')
+        .select('id, registration_id, event_id, status, scanned_at, scanned_by')
+        .in('event_id', eventIds);
+
+      (attList || []).forEach((att) => {
+        attendanceMap.set(att.registration_id, att);
+      });
+    } catch (attErr) {
+      console.warn('Attendance query notice:', attErr);
+    }
+  }
+
+  // 5. Construct normalized team attendance rows
+  return matchingTeams.map((t) => {
+    const rawMembers = memberDetailsMap.get(t.id) || [];
+    const membersList = rawMembers.length > 0 ? rawMembers : (t.team_members || []);
+    const leaderMem = membersList.find((m) => m.role === 'LEADER') || membersList[0] || {};
+    const leaderName = t.team_leader_name || leaderMem?.name || 'Team Leader';
+    const allMemberNames = membersList.map((m) => m.name).filter(Boolean).join(', ') || leaderName;
+    const college = leaderMem?.college || membersList[0]?.college || t.college || 'Vel Tech';
+
+    let isPresent = false;
+    let scannedAt = null;
+    for (const mem of membersList) {
+      if (mem.registration_id && attendanceMap.has(mem.registration_id)) {
+        const att = attendanceMap.get(mem.registration_id);
+        if (att?.status === 'PRESENT') {
+          isPresent = true;
+          if (att.scanned_at) scannedAt = att.scanned_at;
+          break;
+        }
+      }
+    }
+
+    const eventObj = allAssigned.find(e => e.id === t.event_id || (e.code || '').toUpperCase() === (t.event_code || '').toUpperCase()) || allAssigned[0];
+    const eventName = t.event_name || eventObj?.name || t.event_code || 'Team Event';
+    const eventDay = eventObj?.day ? (eventObj.day === 'DAY_1' ? 'Day 1' : eventObj.day === 'DAY_2' ? 'Day 2' : eventObj.day) : (t.day || 'Day 1');
+
+    return {
+      team_id: t.id,
+      team_code: t.team_code || '—',
+      team_name: t.team_name || 'Team',
+      leader_name: leaderName,
+      all_members: allMemberNames,
+      college,
+      event_name: eventName,
+      event_day: eventDay,
+      status: isPresent ? 'PRESENT' : 'ABSENT',
+      scanned_at: scannedAt ? formatDate(scannedAt) : (isPresent ? 'Present' : '— Not Marked —'),
+    };
+  });
+}
+
+export async function exportCoordinatorTeamAttendanceReport(
+  client,
+  assignedEvents = [],
+  assignedSpecialEvents = [],
+  coordinatorInfo = {}
+) {
+  const rows = await getCoordinatorScopedTeamAttendanceData(client, assignedEvents, assignedSpecialEvents);
+  const csvData = rows.map((r) => ({
+    'Team Code': r.team_code,
+    'Team Name': r.team_name,
+    'Team Leader': r.leader_name,
+    'All Team Members': r.all_members,
+    'College Name': r.college,
+    'Registered Event': r.event_name,
+    'Event Day': r.event_day,
+    'Attendance Status': r.status,
+    'Attendance Date & Time': r.scanned_at,
+  }));
+  downloadCsv(`coordinator-team-attendance-${new Date().toISOString().slice(0, 10)}.csv`, csvData);
+}
+
+export async function exportCoordinatorTeamAttendancePdfReport(
+  client,
+  assignedEvents = [],
+  assignedSpecialEvents = [],
+  coordinatorInfo = {}
+) {
+  const rows = await getCoordinatorScopedTeamAttendanceData(client, assignedEvents, assignedSpecialEvents);
+  const total = rows.length;
+  const presentCount = rows.filter((r) => r.status === 'PRESENT').length;
+  const absentCount = Math.max(0, total - presentCount);
+  const rateStr = total > 0 ? `${Math.round((presentCount / total) * 100)}%` : '0%';
+
+  const allAssigned = [...assignedEvents, ...assignedSpecialEvents];
+  const eventNames = allAssigned.length
+    ? allAssigned.map((e) => (e.code ? `${e.code} (${e.name})` : e.name)).join(', ')
+    : 'Assigned Coordinator Team Events';
+
+  const coordDesk = coordinatorInfo?.name
+    ? `${coordinatorInfo.name} (Coordinator Desk)`
+    : 'Event Coordinator Desk';
+
+  const pdfRows = rows.map((r) => ({
+    team_code: r.team_code,
+    team_name: r.team_name,
+    leader_name: r.leader_name,
+    members: r.all_members,
+    college: r.college,
+    event: r.event_name,
+    day: r.event_day,
+    status: r.status,
+    attendance_time: r.scanned_at,
+  }));
+
+  generateCyberPdfReport({
+    title: 'CYBER SENTINEL 2K26',
+    subtitle: 'Official Team Attendance Accreditation & Check-In Verification Audit Sheet',
+    eventName: eventNames,
+    reportType: 'COORDINATOR_ATTENDANCE',
+    generatedBy: coordDesk,
+    metrics: {
+      total,
+      confirmed: presentCount,
+      pending: 0,
+      rejected: absentCount,
+      rate: rateStr,
+      revenue: null,
+    },
+    columns: [
+      { key: 'team_code', header: 'Team Code' },
+      { key: 'team_name', header: 'Team Name' },
+      { key: 'leader_name', header: 'Team Leader' },
+      { key: 'members', header: 'All Team Members' },
+      { key: 'college', header: 'College' },
+      { key: 'event', header: 'Registered Event' },
+      { key: 'day', header: 'Day' },
+      { key: 'status', header: 'Status' },
+      { key: 'attendance_time', header: 'Attendance Date & Time' },
+    ],
+    rows: pdfRows,
+    filename: `coordinator-team-attendance-${new Date().toISOString().slice(0, 10)}.pdf`,
+  });
+}
+

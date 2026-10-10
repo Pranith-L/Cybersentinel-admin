@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Modal } from './Modal';
-import { Camera, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { extractQrToken } from '../../utils/helpers';
+import { Camera, Search, AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
+import { extractQrToken, extractTeamQrToken } from '../../utils/helpers';
 import './QrScannerModal.css';
 
 export function QrScannerModal({
@@ -12,12 +12,16 @@ export function QrScannerModal({
   onScanSuccess,
   title = 'Scan QR Code',
   placeholder = 'Enter Registration ID or Token',
+  mode = 'any', // 'participant' | 'team' | 'any'
 }) {
   const [manualCode, setManualCode] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [scanDetected, setScanDetected] = useState(false);
+  const [capturedCode, setCapturedCode] = useState('');
   const scannerRef = useRef(null);
+  const isProcessingRef = useRef(false);
+
   // Store callbacks in refs so the effect doesn't re-run when they change
   const onScanSuccessRef = useRef(onScanSuccess);
   const onScanRef = useRef(onScan);
@@ -27,13 +31,26 @@ export function QrScannerModal({
   useEffect(() => { onScanSuccessRef.current = onScanSuccess; }, [onScanSuccess]);
   useEffect(() => { onScanRef.current = onScan; }, [onScan]);
 
+  const resumeScanning = () => {
+    setScanDetected(false);
+    setCapturedCode('');
+    isProcessingRef.current = false;
+    try {
+      if (scannerRef.current) {
+        scannerRef.current.resume();
+      }
+    } catch (_) {}
+  };
+
   useEffect(() => {
     let html5QrCode = null;
 
     if (isOpen) {
       setErrorMsg('');
       setScanDetected(false);
+      setCapturedCode('');
       setIsScanning(false);
+      isProcessingRef.current = false;
 
       const startScanner = async () => {
         try {
@@ -51,13 +68,43 @@ export function QrScannerModal({
               qrbox: { width: 250, height: 250 },
             },
             (decodedText) => {
-              const token = extractQrToken(decodedText);
+              if (isProcessingRef.current) return;
+
+              let token = '';
+              if (mode === 'team') {
+                token = extractTeamQrToken(decodedText) || extractQrToken(decodedText) || decodedText;
+              } else if (mode === 'participant') {
+                token = extractQrToken(decodedText) || decodedText;
+              } else {
+                // Any mode: check team first if json or prefix, else standard qr token
+                token = extractTeamQrToken(decodedText) || extractQrToken(decodedText) || decodedText;
+              }
+
               if (token) {
+                // Google Pay style single detection: lock immediately
+                isProcessingRef.current = true;
                 setScanDetected(true);
+                setCapturedCode(token);
+
+                // Pause the camera video/decoding immediately to avoid repeated toasts/calls
+                try {
+                  if (html5QrCode && html5QrCode.isScanning) {
+                    html5QrCode.pause(true);
+                  }
+                } catch (_) {}
+
+                // Haptic feedback if available
+                try {
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                    navigator.vibrate(100);
+                  }
+                } catch (_) {}
+
+                // Dispatch single callback cleanly
                 setTimeout(() => {
-                  if (onScanSuccessRef.current) onScanSuccessRef.current(token);
-                  if (onScanRef.current) onScanRef.current({ qrToken: token });
-                }, 300);
+                  if (onScanSuccessRef.current) onScanSuccessRef.current(token, decodedText);
+                  if (onScanRef.current) onScanRef.current({ qrToken: token, rawText: decodedText });
+                }, 150);
               }
             },
             () => {}
@@ -76,6 +123,7 @@ export function QrScannerModal({
     }
 
     return () => {
+      isProcessingRef.current = false;
       if (scannerRef.current) {
         scannerRef.current
           .stop()
@@ -87,13 +135,16 @@ export function QrScannerModal({
       }
     };
   // Only restart the scanner when isOpen changes — not on callback changes
-  }, [isOpen]);
+  }, [isOpen, mode]);
 
   function handleManualSubmit(e) {
     e.preventDefault();
     if (!manualCode.trim()) return;
-    const token = extractQrToken(manualCode.trim());
-    if (onScanSuccess) onScanSuccess(token || manualCode.trim());
+    const token = mode === 'team'
+      ? extractTeamQrToken(manualCode.trim()) || manualCode.trim()
+      : extractQrToken(manualCode.trim()) || manualCode.trim();
+
+    if (onScanSuccess) onScanSuccess(token, manualCode.trim());
     if (onScan) onScan({ registrationCode: manualCode.trim(), qrToken: token });
     setManualCode('');
   }
@@ -137,13 +188,54 @@ export function QrScannerModal({
           </div>
         </div>
 
-        {/* Live Instruction Pill */}
+        {/* Live Instruction Pill or Paused Banner */}
         {isScanning && (
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <div className="cyber-qr-instruction">
-              <span className="cyber-qr-instruction-dot" />
-              <span>ALIGN BADGE QR CODE INSIDE FRAME</span>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            {scanDetected ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  border: '1px solid rgba(16, 185, 129, 0.5)',
+                  color: '#34d399',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                }}
+              >
+                <CheckCircle2 size={16} />
+                <span>CODE CAPTURED • SCANNER PAUSED</span>
+                <button
+                  type="button"
+                  onClick={resumeScanning}
+                  style={{
+                    marginLeft: '8px',
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    background: 'rgba(16, 185, 129, 0.3)',
+                    border: '1px solid rgba(16, 185, 129, 0.6)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <RotateCcw size={12} />
+                  <span>Scan Next</span>
+                </button>
+              </div>
+            ) : (
+              <div className="cyber-qr-instruction">
+                <span className="cyber-qr-instruction-dot" />
+                <span>ALIGN {mode === 'team' ? 'TEAM' : 'BADGE'} QR CODE INSIDE FRAME</span>
+              </div>
+            )}
           </div>
         )}
 

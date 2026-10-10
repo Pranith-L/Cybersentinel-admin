@@ -21,9 +21,24 @@ export function formatDate(dateString) {
 export function extractQrToken(value) {
   if (!value) return '';
   const trimmed = String(value).trim();
+  // Check JSON payload
   try {
-    const url = new URL(trimmed, window.location.origin);
-    const queryToken = url.searchParams.get('token');
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === 'object') {
+      const candidate = parsed.token || parsed.qr_token || parsed.registration_code || parsed.id || '';
+      if (candidate) return candidate;
+    }
+  } catch {}
+
+  // Explicit registration code e.g. CS-26-0001
+  if (/^CS-?[0-9]+/i.test(trimmed)) {
+    return trimmed.toUpperCase();
+  }
+
+  try {
+    const origin = typeof window !== 'undefined' && window.location ? window.location.origin : 'https://cybersentinel.in';
+    const url = new URL(trimmed, origin);
+    const queryToken = url.searchParams.get('token') || url.searchParams.get('id') || url.searchParams.get('code');
     if (queryToken) return queryToken;
     const parts = url.pathname.split('/').filter(Boolean);
     return parts[parts.length - 1] || trimmed;
@@ -34,6 +49,46 @@ export function extractQrToken(value) {
     return match ? match[0] : trimmed;
   }
 }
+
+export function extractTeamQrToken(value) {
+  if (!value) return '';
+  const trimmed = String(value).trim();
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === 'object') {
+      const candidate = parsed.team_id || parsed.teamId || parsed.team_code || parsed.teamCode || parsed.id || '';
+      if (candidate) return candidate;
+    }
+  } catch {}
+
+  if (trimmed.startsWith('CYBER_TEAM:')) {
+    const parts = trimmed.split(':');
+    return parts[1] || trimmed;
+  }
+  if (trimmed.startsWith('TEAM:')) {
+    const parts = trimmed.split(':');
+    return parts[1] || trimmed;
+  }
+
+  try {
+    const origin = typeof window !== 'undefined' && window.location ? window.location.origin : 'https://cybersentinel.in';
+    const url = new URL(trimmed, origin);
+    const queryTeam =
+      url.searchParams.get('team_id') ||
+      url.searchParams.get('team') ||
+      url.searchParams.get('code') ||
+      url.searchParams.get('id');
+    if (queryTeam) return queryTeam;
+    const parts = url.pathname.split('/').filter(Boolean);
+    return parts[parts.length - 1] || trimmed;
+  } catch {
+    const match = trimmed.match(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i
+    );
+    return match ? match[0] : trimmed;
+  }
+}
+
 
 export function openGmailCompose(optionsOrTo = {}, subjectArg = '', bodyArg = '', bccArg = []) {
   let to = '';
@@ -194,9 +249,10 @@ export function buildTeamConfirmationGmailLink(team) {
   const leaderName = leader.name || team.team_leader_name || 'Team Leader';
   const teamName = team.team_name || 'Team';
   const teamCode = team.team_code || '—';
-  const eventName = team.event_name || team.event_code || 'Event';
+  const eventName = team.event_name || team.event_code || 'Assigned Event';
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://cybersentinel.in';
+  const teamPassUrl = `${baseUrl}/check-status?team=${encodeURIComponent(team.team_code || team.id)}`;
 
   const memberPassList = members
     .map((m, idx) => {
@@ -208,17 +264,27 @@ export function buildTeamConfirmationGmailLink(team) {
     })
     .join('\n\n');
 
-  const subject = `CyberSentinel 2K26 - Team Confirmation & Entry QR Passes (${teamName} - #${teamCode})`;
+  const subject = `CyberSentinel 2K26 - Team Confirmation & QR Code Pass (${teamName} - #${teamCode})`;
   const body = [
     `Dear ${leaderName} & Team "${teamName}",`,
     '',
-    `Congratulations! Your team "${teamName}" (Code: #${teamCode}) is officially registered and confirmed for ${eventName} at CyberSentinel 2K26!`,
+    `Congratulations! Your team "${teamName}" (Team Code: #${teamCode}) is officially registered and confirmed for ${eventName} at CyberSentinel 2K26!`,
     '',
-    `🎟️ OFFICIAL DIGITAL ENTRY QR PASSES FOR ALL TEAM MEMBERS:`,
+    `🏷️ TEAM REGISTRATION SUMMARY:`,
+    `• Team Name: ${teamName}`,
+    `• Team Code: #${teamCode}`,
+    `• Registered Event: ${eventName}`,
+    `• Team Leader: ${leaderName} (${leader.cs_id || team.team_leader_registration_code || 'Leader'})`,
+    `• Total Members: ${members.length}`,
+    '',
+    `🔗 OFFICIAL TEAM QR CODE PASS:`,
+    `${teamPassUrl}`,
+    '',
+    `🎟️ INDIVIDUAL MEMBER ENTRY PASSES:`,
     '',
     memberPassList || 'Member passes available on portal.',
     '',
-    `Please ensure all team members save their respective QR pass links for gate entry and event check-in.`,
+    `Please ensure your team leader and all members have the team QR pass ready on their mobile phones or printed out at the event desk for quick check-in.`,
     '',
     `Warm regards,`,
     `CyberSentinel 2K26 Organizing Committee`,
@@ -233,3 +299,4 @@ export function buildTeamConfirmationGmailLink(team) {
   url.searchParams.set('body', body);
   return url.toString();
 }
+

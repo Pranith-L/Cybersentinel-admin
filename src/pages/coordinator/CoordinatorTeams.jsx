@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -8,6 +9,10 @@ import {
 import StatusBadge from '../../components/ui/StatusBadge';
 import DetailsModal from '../../components/common/DetailsModal';
 import { buildTeamConfirmationGmailLink } from '../../utils/helpers';
+import {
+  generateTeamQrDataUrl,
+  generateAndDownloadTeamQrBadge,
+} from '../../utils/qrBadge';
 import {
   Users,
   Search,
@@ -20,6 +25,11 @@ import {
   Phone,
   Mail,
   User,
+  QrCode,
+  Download,
+  Camera,
+  ExternalLink,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function CoordinatorTeams() {
@@ -35,6 +45,11 @@ export default function CoordinatorTeams() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [eventFilter, setEventFilter] = useState('ALL');
   const [selectedTeam, setSelectedTeam] = useState(null);
+
+  // Team QR Preview Modal State
+  const [qrModalTeam, setQrModalTeam] = useState(null);
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [downloadingBadge, setDownloadingBadge] = useState(false);
 
   const client = getCoordinatorClientInstance();
 
@@ -84,6 +99,16 @@ export default function CoordinatorTeams() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // When a team is selected for QR preview, generate data URL
+  useEffect(() => {
+    if (qrModalTeam) {
+      setQrDataUrl('');
+      generateTeamQrDataUrl(qrModalTeam, { width: 320 })
+        .then((url) => setQrDataUrl(url))
+        .catch((err) => console.error('Failed to generate preview QR:', err));
+    }
+  }, [qrModalTeam]);
 
   const assignedEventIds = useMemo(() => {
     return new Set(assignedEvents.map((e) => e.id).filter(Boolean));
@@ -149,34 +174,28 @@ export default function CoordinatorTeams() {
             (pe.name && assignedEventNames.has((pe.name || '').toLowerCase().trim()))
           ));
 
-        if (!primaryMatch && !pkgMatch) {
-          return false;
-        }
+        if (!primaryMatch && !pkgMatch) return false;
       }
 
-      const q = search.trim().toLowerCase();
-      const code = (t.team_code || '').toLowerCase();
-      const name = (t.team_name || '').toLowerCase();
-      const leaderCode = (t.team_leader_registration_code || '').toLowerCase();
-      const leaderName = (t.team_leader_name || '').toLowerCase();
-
-      const memberMatch = (t.team_members || []).some(
-        (m) =>
-          (m.name || '').toLowerCase().includes(q) ||
-          (m.cs_id || '').toLowerCase().includes(q) ||
-          (m.phone || '').toLowerCase().includes(q) ||
-          (m.email || '').toLowerCase().includes(q)
+      const q = search.toLowerCase().trim();
+      const membersMatch = (t.team_members || []).some((m) =>
+        (m.name || '').toLowerCase().includes(q) ||
+        (m.cs_id || '').toLowerCase().includes(q) ||
+        (m.phone || '').includes(q) ||
+        (m.email || '').toLowerCase().includes(q)
       );
 
       const matchesSearch =
         !q ||
-        code.includes(q) ||
-        name.includes(q) ||
-        leaderCode.includes(q) ||
-        leaderName.includes(q) ||
-        memberMatch;
+        (t.team_name || '').toLowerCase().includes(q) ||
+        (t.team_code || '').toLowerCase().includes(q) ||
+        (t.team_leader_registration_code || '').toLowerCase().includes(q) ||
+        (t.team_leader_name || '').toLowerCase().includes(q) ||
+        membersMatch;
 
-      const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter;
+      const matchesStatus =
+        statusFilter === 'ALL' || (t.status || '').toUpperCase() === statusFilter.toUpperCase();
+
       const matchesEvent =
         eventFilter === 'ALL' ||
         t.event_id === eventFilter ||
@@ -188,28 +207,56 @@ export default function CoordinatorTeams() {
     });
   }, [teams, assignedEvents, assignedEventIds, assignedEventCodes, assignedEventNames, search, statusFilter, eventFilter]);
 
+  const handleDownloadBadge = async (team) => {
+    try {
+      setDownloadingBadge(true);
+      addToast(`Generating high-res PNG pass for "${team.team_name}"...`, 'info');
+      await generateAndDownloadTeamQrBadge(team);
+      addToast(`Downloaded PNG Pass for "${team.team_name}"!`, 'success');
+    } catch (err) {
+      console.error(err);
+      addToast('Failed to download team pass badge', 'error');
+    } finally {
+      setDownloadingBadge(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-xs font-mono text-cyan-300 mb-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#00f0ff]" />
+            <span>TEAM EVENT DIRECTORY & QR MANAGEMENT</span>
+          </div>
           <h1 className="text-2xl font-bold font-heading text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-brand-cyan" />
             Assigned Event Teams
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Formed teams, leaders, and member rosters participating in your assigned events.
+            Registered team rosters, verified leaders, and official downloadable Team QR Code entry passes.
           </p>
         </div>
 
-        <button
-          onClick={loadData}
-          disabled={refreshing}
-          className="btn-secondary self-start sm:self-auto flex items-center gap-2 text-sm"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/coordinator/attendance?tab=team"
+            className="py-2.5 px-4 rounded-xl border border-purple-500/60 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs tracking-wide shadow-[0_0_15px_rgba(168,85,247,0.35)] hover:brightness-110 flex items-center gap-2 transition-all"
+          >
+            <Camera className="w-4 h-4 text-purple-200" />
+            <span>Team QR Scanner</span>
+          </Link>
+
+          <button
+            onClick={loadData}
+            disabled={refreshing}
+            className="btn-secondary flex items-center gap-2 text-xs py-2.5 px-3.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Filters Toolbar */}
@@ -295,11 +342,12 @@ export default function CoordinatorTeams() {
               <thead>
                 <tr>
                   <th style={{ minWidth: '150px' }}>Team Info</th>
-                  <th style={{ minWidth: '150px' }}>Event</th>
+                  <th style={{ minWidth: '140px' }}>Event</th>
+                  <th style={{ minWidth: '120px' }}>Team QR Pass</th>
                   <th style={{ minWidth: '320px' }}>Team Participants (Phone & Email)</th>
                   <th style={{ minWidth: '100px' }}>Members</th>
                   <th style={{ minWidth: '110px' }}>Status</th>
-                  <th className="text-right" style={{ minWidth: '90px' }}>Roster</th>
+                  <th className="text-right" style={{ minWidth: '140px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -320,6 +368,32 @@ export default function CoordinatorTeams() {
                           {getDisplayEventName(team)}
                         </span>
                       </td>
+
+                      {/* Team QR Pass Column */}
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setQrModalTeam(team)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-950/60 border border-cyan-500/30 text-xs font-mono text-brand-cyan hover:bg-cyan-900/60 hover:border-cyan-400 transition-all group"
+                            title="Preview Team QR Code Pass"
+                          >
+                            <QrCode className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                            <span>Preview</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadBadge(team)}
+                            disabled={downloadingBadge}
+                            className="p-1.5 rounded-lg bg-purple-950/50 border border-purple-500/30 text-purple-300 hover:bg-purple-900/50 hover:text-white transition-all"
+                            title="Download PNG Pass Badge"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+
                       <td>
                         <div className="flex flex-col gap-2">
                           {team.team_members && team.team_members.length > 0 ? (
@@ -387,6 +461,7 @@ export default function CoordinatorTeams() {
                           )}
                         </div>
                       </td>
+
                       <td>
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-sm font-semibold text-slate-200">
@@ -402,9 +477,11 @@ export default function CoordinatorTeams() {
                           </div>
                         </div>
                       </td>
+
                       <td>
                         <StatusBadge status={team.status} />
                       </td>
+
                       <td className="text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
                           <a
@@ -415,7 +492,7 @@ export default function CoordinatorTeams() {
                             title="Email Team Leader QR Passes"
                           >
                             <Mail className="w-3.5 h-3.5 text-brand-cyan" />
-                            Email Team
+                            Email
                           </a>
                           <button
                             onClick={() => setSelectedTeam(team)}
@@ -454,6 +531,98 @@ export default function CoordinatorTeams() {
               .join('; ') || 'No members joined yet',
           }}
         />
+      )}
+
+      {/* Team QR Code Preview & Download Modal */}
+      {qrModalTeam && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setQrModalTeam(null);
+          }}
+        >
+          <div className="bg-[#0b1021] border border-cyan-500/40 rounded-2xl w-full max-w-md shadow-2xl p-6 text-white relative">
+            <div className="flex items-center justify-between border-b border-cyan-500/20 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-brand-cyan" />
+                <h2 className="text-lg font-bold font-heading">Official Team QR Pass</h2>
+              </div>
+              <button
+                onClick={() => setQrModalTeam(null)}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-center">
+              {/* QR Image Box */}
+              <div className="p-4 bg-white rounded-2xl inline-block mx-auto shadow-[0_0_25px_rgba(0,240,255,0.3)]">
+                {qrDataUrl ? (
+                  <img
+                    src={qrDataUrl}
+                    alt={`Team QR for ${qrModalTeam.team_name}`}
+                    className="w-56 h-56 mx-auto object-contain"
+                  />
+                ) : (
+                  <div className="w-56 h-56 flex items-center justify-center text-slate-800">
+                    <RefreshCw className="w-6 h-6 animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* Team Information */}
+              <div className="space-y-1">
+                <div className="text-xl font-bold font-heading text-white">
+                  {qrModalTeam.team_name}
+                </div>
+                <div className="font-mono text-sm text-brand-cyan">
+                  #{qrModalTeam.team_code}
+                </div>
+                <div className="text-xs text-slate-300">
+                  Registered Event: <strong className="text-cyan-300">{getDisplayEventName(qrModalTeam)}</strong>
+                </div>
+                <div className="text-xs text-slate-400">
+                  Team Leader: {qrModalTeam.team_leader_name || 'Leader'} · {(qrModalTeam.team_members || []).length} Members
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadBadge(qrModalTeam)}
+                  disabled={downloadingBadge}
+                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 shadow-[0_0_15px_rgba(0,240,255,0.3)] transition-all"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download PNG Pass Badge</span>
+                </button>
+
+                <div className="flex gap-2">
+                  <a
+                    href={buildTeamConfirmationGmailLink(qrModalTeam)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 px-3 rounded-xl border border-cyan-500/30 bg-cyan-950/40 text-brand-cyan text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-cyan-900/40 transition-all"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Email Passes</span>
+                  </a>
+
+                  <Link
+                    to={`/coordinator/attendance?tab=team&team=${encodeURIComponent(qrModalTeam.team_code || qrModalTeam.id)}`}
+                    onClick={() => setQrModalTeam(null)}
+                    className="flex-1 py-2 px-3 rounded-xl border border-purple-500/30 bg-purple-950/40 text-purple-300 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-purple-900/40 transition-all"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Scan In</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

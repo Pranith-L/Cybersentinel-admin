@@ -5,6 +5,7 @@ import {
   applyPaymentOverrides,
 } from '../utils/statusStore';
 import { cachedRequest } from '../utils/requestCache';
+import { extractQrToken, extractTeamQrToken } from '../utils/helpers';
 
 export const KNOWN_COORDINATOR_ASSIGNMENTS = {
   'PP@gmail.com': [{ id: '45b38b2c-62fd-47d0-b1e0-ecf7d303975a', code: 'PP', name: 'Paper Presentation', day: 'DAY_1', event_type: 'TEAM', venue: 'Main Auditorium' }],
@@ -442,34 +443,512 @@ export async function getCoordinatorTeams(client) {
 }
 
 export async function inspectCoordinatorEventAttendance(client, qrToken, eventId, registrationCode) {
-  let token = qrToken;
-  if (registrationCode) {
-    const { data: reg, error: regErr } = await client
+  if (!eventId) throw new Error('Active Event ID is required for attendance inspection.');
+
+  let token = extractQrToken(qrToken) || (qrToken ? String(qrToken).trim() : '');
+  let code = registrationCode ? registrationCode.trim().toUpperCase() : '';
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  let reg = null;
+
+  // If token is a registration code format or not a UUID, or code is supplied
+  if (code || (token && !uuidRegex.test(token))) {
+    const lookupCode = code || token;
+    const { data: foundReg, error: regErr } = await client
       .from('registrations')
-      .select('qr_token')
-      .eq('registration_code', registrationCode.trim().toUpperCase())
+      .select('id, registration_code, qr_token, selected_day, status, participants(name, college, department, phone, year)')
+      .or(`registration_code.ilike.${lookupCode},id.eq.${lookupCode}`)
       .maybeSingle();
-    if (regErr || !reg) throw regErr || new Error('Registration ID not found.');
-    token = reg.qr_token;
+
+    if (foundReg) {
+      reg = foundReg;
+      token = foundReg.qr_token || token;
+    } else if (regErr) {
+      console.warn('Registration lookup notice:', regErr);
+    }
   }
 
-  const { data, error } = await client.rpc('inspect_coordinator_event_attendance', {
-    p_qr_token: token,
-    p_event_id: eventId,
-  });
+  // If still no reg details but token is UUID, lookup registration by qr_token
+  if (!reg && token && uuidRegex.test(token)) {
+    const { data: foundReg } = await client
+      .from('registrations')
+      .select('id, registration_code, qr_token, selected_day, status, participants(name, college, department, phone, year)')
+      .eq('qr_token', token)
+      .maybeSingle();
+    if (foundReg) reg = foundReg;
+  }
 
-  if (error) throw error;
-  return data;
+  // Fetch active event details
+  const { data: activeEvent } = await client
+    .from('events')
+    .select('id, code, name, day, event_type')
+    .eq('id', eventId)
+    .maybeSingle();
+
+  // 1. Try Supabase RPC inspect_coordinator_event_attendance
+  let rpcData = null;
+  let rpcError = null;
+  if (token && uuidRegex.test(token)) {
+    try {
+      const { data, error } = await client.rpc('inspect_coordinator_event_attendance', {
+        p_qr_token: token,
+        p_event_id: eventId,
+      });
+      if (error) rpcError = error;
+      else rpcData = data;
+    } catch (err) {
+      rpcError = err;
+    }
+  }
+
+  // 2. Parse RPC response if available
+  if (rpcData) {
+    if (rpcData.success === false && rpcData.code === 'NOT_AUTHORIZED') {
+      return {
+        success: false,
+        not_authorized: true,
+        is_registered: false,
+        eligible: false,
+        already_marked: false,
+        message: 'You are not assigned to coordinate this event.',
+      };
+    }
+
+    if (rpcData.success === false && rpcData.code === 'NOT_REGISTERED') {
+      // Find what event this participant actually registered for
+      let registeredEventName = '';
+      if (reg?.id) {
+        const { data: otherEvs } = await client
+          .from('selected_event_registrations')
+          .select('events(code, name, day)')
+          .eq('registration_id', reg.id)
+          .limit(1);
+        if (otherEvs && otherEvs[0]?.events) {
+          registeredEventName = `${otherEvs[0].events.code} (${otherEvs[0].events.name})`;
+        }
+      }
+
+      return {
+        success: false,
+        is_registered: false,
+        eligible: false,
+        already_marked: false,
+        registration_code: reg?.registration_code || rpcData.registration_code || '—',
+        participant_name: reg?.participants?.name || rpcData.participant?.name || 'Participant',
+        college: reg?.participants?.college || rpcData.participant?.college || '—',
+        department: reg?.participants?.department || rpcData.participant?.department || '—',
+        year: reg?.participants?.year || rpcData.participant?.year || '—',
+        selected_day: reg?.selected_day || '—',
+        active_event: activeEvent ? `${activeEvent.code} (${activeEvent.name})` : 'Active Event',
+        registered_event: registeredEventName,
+        message: registeredEventName
+          ? `Event Mismatch: Participant is registered for ${registeredEventName}, not ${activeEvent?.code || 'this event'}!`
+          : `Participant is not registered for event ${activeEvent?.code || ''}!`,
+      };
+    }
+
+    const isRegistered = rpcData.success === true || rpcData.code === 'READY' || rpcData.code === 'ALREADY_PRESENT';
+    const alreadyMarked = rpcData.code === 'ALREADY_PRESENT' || Boolean(rpcData.attendance?.scanned_at);
+
+    return {
+      success: isRegistered,
+      is_registered: isRegistered,
+      eligible: isRegistered,
+      already_marked: alreadyMarked,
+      registration_code: rpcData.registration_code || reg?.registration_code || '—',
+      registration_id: reg?.id || null,
+      qr_token: rpcData.qr_token || token,
+      participant_name: rpcData.participant?.name || reg?.participants?.name || 'Participant',
+      college: rpcData.participant?.college || reg?.participants?.college || '—',
+      department: rpcData.participant?.department || reg?.participants?.department || '—',
+      year: rpcData.participant?.year || reg?.participants?.year || '—',
+      selected_day: reg?.selected_day || '—',
+      event_code: rpcData.event?.code || activeEvent?.code || '',
+      event_name: rpcData.event?.name || activeEvent?.name || '',
+      existing_scan_at: rpcData.attendance?.scanned_at || null,
+      message: alreadyMarked
+        ? 'Participant already marked PRESENT for this event.'
+        : 'Participant verified! Ready to record attendance.',
+      raw: rpcData,
+    };
+  }
+
+  // 3. Resilient Direct DB Fallback (if RPC failed or token is non-UUID)
+  if (!reg) {
+    throw new Error('Registration record not found for the scanned badge or code.');
+  }
+
+  // Check event registration in selected_event_registrations or event_registrations
+  let isRegistered = false;
+  const [{ data: selEvs }, { data: regEvs }] = await Promise.all([
+    client
+      .from('selected_event_registrations')
+      .select('event_id, events(code, name, day)')
+      .eq('registration_id', reg.id),
+    client
+      .from('event_registrations')
+      .select('event_id, events(code, name, day)')
+      .eq('registration_id', reg.id),
+  ]);
+
+  const allRegistrations = [...(selEvs || []), ...(regEvs || [])];
+  const matchedEvent = allRegistrations.find((r) => r.event_id === eventId);
+  if (matchedEvent) {
+    isRegistered = true;
+  }
+
+  if (!isRegistered) {
+    const other = allRegistrations[0]?.events;
+    const otherName = other ? `${other.code} (${other.name})` : '';
+    return {
+      success: false,
+      is_registered: false,
+      eligible: false,
+      already_marked: false,
+      registration_code: reg.registration_code,
+      participant_name: reg.participants?.name || 'Participant',
+      college: reg.participants?.college || '—',
+      department: reg.participants?.department || '—',
+      year: reg.participants?.year || '—',
+      selected_day: reg.selected_day || '—',
+      active_event: activeEvent ? `${activeEvent.code} (${activeEvent.name})` : 'Active Event',
+      registered_event: otherName,
+      message: otherName
+        ? `Event Mismatch: Participant is registered for ${otherName}, not ${activeEvent?.code || 'this event'}!`
+        : `Participant is not registered for event ${activeEvent?.code || ''}!`,
+    };
+  }
+
+  // Check attendance table
+  const { data: attList } = await client
+    .from('attendance')
+    .select('id, scanned_at, status')
+    .eq('registration_id', reg.id)
+    .eq('event_id', eventId)
+    .eq('status', 'PRESENT')
+    .maybeSingle();
+
+  const alreadyMarked = Boolean(attList?.scanned_at);
+
+  return {
+    success: true,
+    is_registered: true,
+    eligible: true,
+    already_marked: alreadyMarked,
+    registration_code: reg.registration_code,
+    registration_id: reg.id,
+    qr_token: reg.qr_token || token,
+    participant_name: reg.participants?.name || 'Participant',
+    college: reg.participants?.college || '—',
+    department: reg.participants?.department || '—',
+    year: reg.participants?.year || '—',
+    selected_day: reg.selected_day || '—',
+    event_code: activeEvent?.code || '',
+    event_name: activeEvent?.name || '',
+    existing_scan_at: attList?.scanned_at || null,
+    message: alreadyMarked
+      ? 'Participant already marked PRESENT for this event.'
+      : 'Participant verified! Ready to record attendance.',
+  };
 }
 
-export async function recordCoordinatorEventAttendance(client, qrToken, eventId) {
-  const { data, error } = await client.rpc('record_coordinator_event_attendance', {
-    p_qr_token: qrToken,
-    p_event_id: eventId,
-  });
+export async function recordCoordinatorEventAttendance(client, qrToken, eventId, actorId) {
+  if (!eventId) throw new Error('Active Event ID is required.');
 
-  if (error) throw error;
-  return data;
+  let token = extractQrToken(qrToken) || (qrToken ? String(qrToken).trim() : '');
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  // 1. Try Supabase RPC record_coordinator_event_attendance if token is UUID
+  if (token && uuidRegex.test(token)) {
+    try {
+      const { data, error } = await client.rpc('record_coordinator_event_attendance', {
+        p_qr_token: token,
+        p_event_id: eventId,
+      });
+      if (!error && data) {
+        if (data.success) return data;
+        if (data.code === 'ALREADY_PRESENT') {
+          return {
+            success: true,
+            already_marked: true,
+            message: data.message || 'Attendance already marked.',
+            registration_code: data.registration_code,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('RPC record attendance fallback to direct:', err);
+    }
+  }
+
+  // 2. Direct fallback
+  let regId = null;
+  let regCode = '';
+  if (uuidRegex.test(token)) {
+    const { data: reg } = await client
+      .from('registrations')
+      .select('id, registration_code')
+      .eq('qr_token', token)
+      .maybeSingle();
+    regId = reg?.id;
+    regCode = reg?.registration_code || '';
+  } else {
+    const { data: reg } = await client
+      .from('registrations')
+      .select('id, registration_code')
+      .or(`registration_code.ilike.${token},id.eq.${token}`)
+      .maybeSingle();
+    regId = reg?.id;
+    regCode = reg?.registration_code || '';
+  }
+
+  if (!regId) throw new Error('Registration could not be found to record attendance.');
+
+  const now = new Date().toISOString();
+  const { error: attErr } = await client.from('attendance').upsert(
+    {
+      registration_id: regId,
+      event_id: eventId,
+      scanned_by: actorId || null,
+      status: 'PRESENT',
+      scanned_at: now,
+    },
+    { onConflict: 'registration_id,event_id' }
+  );
+
+  if (attErr) throw attErr;
+
+  return {
+    success: true,
+    message: `Attendance marked PRESENT for ${regCode || 'participant'}!`,
+    registration_code: regCode,
+    scanned_at: now,
+  };
+}
+
+export async function inspectCoordinatorTeamAttendance(client, teamTokenOrCode, eventId) {
+  if (!teamTokenOrCode || !eventId) {
+    throw new Error('Team identifier and event are required.');
+  }
+
+  const rawToken = extractTeamQrToken(teamTokenOrCode) || String(teamTokenOrCode).trim();
+  const tokenClean = rawToken.replace(/^#/, '').trim();
+
+  // 1. Fetch event details for eventId
+  const { data: activeEvent, error: evErr } = await client
+    .from('events')
+    .select('id, code, name, day, event_type')
+    .eq('id', eventId)
+    .maybeSingle();
+
+  if (evErr) throw evErr;
+
+  // 2. Lookup team by id, team_code, or team_name
+  let teamMatch = null;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const isUuid = uuidRegex.test(tokenClean);
+
+  let query = client.from('event_teams').select('*');
+  if (isUuid) {
+    query = query.or(`id.eq.${tokenClean},team_code.ilike.${tokenClean}`);
+  } else {
+    query = query.ilike('team_code', tokenClean);
+  }
+
+  const { data: teamRows } = await query.limit(1);
+  if (teamRows && teamRows.length > 0) {
+    teamMatch = teamRows[0];
+  } else {
+    // Fallback: search team_summary
+    const { data: sumRows } = await client
+      .from('team_summary')
+      .select('*')
+      .or(`team_code.ilike.${tokenClean},team_name.ilike.${tokenClean}`)
+      .limit(1);
+    if (sumRows && sumRows.length > 0) {
+      teamMatch = sumRows[0];
+    }
+  }
+
+  if (!teamMatch) {
+    return {
+      success: false,
+      is_registered: false,
+      not_found: true,
+      message: `No team found matching "${teamTokenOrCode}". Please check the team code or QR code.`,
+    };
+  }
+
+  // 3. Verify event registration for this team
+  let isRegisteredForThisEvent = false;
+  let teamEventName = teamMatch.event_name || '';
+  let teamEventCode = teamMatch.event_code || '';
+
+  if (teamMatch.event_id === eventId) {
+    isRegisteredForThisEvent = true;
+  } else {
+    // Check event_team_packages
+    const { data: pkgRows } = await client
+      .from('event_team_packages')
+      .select('event_id, events(id, code, name)')
+      .eq('team_id', teamMatch.id);
+
+    if (pkgRows && pkgRows.some((p) => p.event_id === eventId)) {
+      isRegisteredForThisEvent = true;
+    }
+  }
+
+  // If not registered for active event, lookup the team's actual registered event
+  if (!isRegisteredForThisEvent) {
+    if (teamMatch.event_id) {
+      const { data: registeredEv } = await client
+        .from('events')
+        .select('id, code, name, day')
+        .eq('id', teamMatch.event_id)
+        .maybeSingle();
+      if (registeredEv) {
+        teamEventName = registeredEv.name;
+        teamEventCode = registeredEv.code;
+      }
+    }
+
+    return {
+      success: false,
+      is_registered: false,
+      is_mismatch: true,
+      team_id: teamMatch.id,
+      team_code: teamMatch.team_code,
+      team_name: teamMatch.team_name,
+      registered_event: teamEventName ? `${teamEventCode} - ${teamEventName}` : 'Different Event',
+      active_event: activeEvent?.name || activeEvent?.code || 'Selected Event',
+      message: `Event Mismatch: Team "${teamMatch.team_name}" (#${teamMatch.team_code}) is registered for ${teamEventName || 'a different event'}, not ${activeEvent?.name || activeEvent?.code || 'this event'}!`,
+    };
+  }
+
+  // 4. Fetch full team members with participant details
+  const { data: memberRows, error: memErr } = await client
+    .from('team_members')
+    .select('team_id, registration_id, member_role, registrations(id, registration_code, participants(name, college, department, phone, email))')
+    .eq('team_id', teamMatch.id);
+
+  if (memErr) throw memErr;
+
+  const members = (memberRows || []).map((m, idx) => ({
+    role: m.member_role || (idx === 0 ? 'LEADER' : 'MEMBER'),
+    registration_id: m.registration_id || m.registrations?.id,
+    cs_id: m.registrations?.registration_code || '—',
+    name: m.registrations?.participants?.name || 'Participant',
+    college: m.registrations?.participants?.college || 'Vel Tech',
+    department: m.registrations?.participants?.department || '—',
+    phone: m.registrations?.participants?.phone || '',
+    email: m.registrations?.participants?.email || '',
+  }));
+
+  const leader = members.find((m) => m.role === 'LEADER') || members[0] || {};
+  const college = leader.college || members[0]?.college || 'Vel Tech';
+  const memberRegIds = members.map((m) => m.registration_id).filter(Boolean);
+
+  // 5. Check attendance table for this event
+  let alreadyMarked = false;
+  let existingScanAt = null;
+
+  if (memberRegIds.length > 0) {
+    const { data: attList } = await client
+      .from('attendance')
+      .select('registration_id, scanned_at, status')
+      .eq('event_id', eventId)
+      .in('registration_id', memberRegIds);
+
+    const presentScans = (attList || []).filter((a) => a.status === 'PRESENT');
+    if (presentScans.length > 0) {
+      alreadyMarked = true;
+      existingScanAt = presentScans[0].scanned_at;
+    }
+  }
+
+  return {
+    success: true,
+    is_registered: true,
+    eligible: true,
+    already_marked: alreadyMarked,
+    team_id: teamMatch.id,
+    team_code: teamMatch.team_code,
+    team_name: teamMatch.team_name,
+    event_id: eventId,
+    event_code: activeEvent?.code || teamMatch.event_code,
+    event_name: activeEvent?.name || teamMatch.event_name,
+    event_day: activeEvent?.day || 'Day 1',
+    college,
+    leader_name: leader.name || teamMatch.team_leader_name || 'Team Leader',
+    leader_phone: leader.phone || '',
+    leader_email: leader.email || teamMatch.team_leader_email || '',
+    member_count: members.length,
+    members,
+    member_registration_ids: memberRegIds,
+    existing_scan_at: existingScanAt,
+    message: alreadyMarked
+      ? `Team attendance was already recorded at ${new Date(existingScanAt).toLocaleTimeString()}`
+      : `Team verified! Ready to record attendance for ${members.length} member(s).`,
+  };
+}
+
+export async function recordCoordinatorTeamAttendance(client, teamId, eventId, actorId) {
+  if (!teamId || !eventId) {
+    throw new Error('Team ID and Event ID are required.');
+  }
+
+  // 1. Fetch team member registration IDs
+  const { data: memberRows, error: memErr } = await client
+    .from('team_members')
+    .select('registration_id, registrations(registration_code)')
+    .eq('team_id', teamId);
+
+  if (memErr) throw memErr;
+
+  const regIds = (memberRows || []).map((m) => m.registration_id).filter(Boolean);
+  if (regIds.length === 0) {
+    throw new Error('No registered members found for this team.');
+  }
+
+  // 2. Check for duplicate attendance
+  const { data: existingAtt } = await client
+    .from('attendance')
+    .select('registration_id, status, scanned_at')
+    .eq('event_id', eventId)
+    .in('registration_id', regIds);
+
+  const alreadyPresent = (existingAtt || []).filter((a) => a.status === 'PRESENT');
+  if (alreadyPresent.length === regIds.length) {
+    return {
+      success: true,
+      already_marked: true,
+      message: 'Team attendance was already marked PRESENT.',
+      count: alreadyPresent.length,
+    };
+  }
+
+  // 3. Upsert attendance for each member
+  const now = new Date().toISOString();
+  const rows = regIds.map((regId) => ({
+    registration_id: regId,
+    event_id: eventId,
+    scanned_by: actorId || null,
+    status: 'PRESENT',
+    scanned_at: now,
+  }));
+
+  const { error: upsertErr } = await client
+    .from('attendance')
+    .upsert(rows, { onConflict: 'registration_id,event_id' });
+
+  if (upsertErr) throw upsertErr;
+
+  return {
+    success: true,
+    message: `Attendance marked PRESENT for all ${rows.length} team member(s)!`,
+    scanned_at: now,
+    count: rows.length,
+  };
 }
 
 export async function getCoordinatorAttendanceList(client, eventId) {
