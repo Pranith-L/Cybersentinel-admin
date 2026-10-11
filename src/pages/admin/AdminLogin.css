@@ -67,16 +67,16 @@
 
 /* Hero Branding Components */
 .cyber-login-crest {
-  width: 215px !important;
-  height: 215px !important;
+  width: 135px !important;
+  height: 135px !important;
   border-radius: 50% !important;
   position: relative !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   background: #09071c !important;
-  border: 3px solid #ec4899 !important;
-  box-shadow: 0 0 35px rgba(236, 72, 153, 0.65), inset 0 0 15px rgba(236, 72, 153, 0.3) !important;
+  border: 2px solid #ec4899 !important;
+  box-shadow: 0 0 24px rgba(236, 72, 153, 0.55), inset 0 0 10px rgba(236, 72, 153, 0.25) !important;
   overflow: hidden !important;
   flex-shrink: 0 !important;
   transition: width 0.25s ease, height 0.25s ease !important;
@@ -84,30 +84,30 @@
 
 .cyber-login-crest.is-coordinator {
   border-color: #00f0ff !important;
-  box-shadow: 0 0 35px rgba(0, 240, 255, 0.65), inset 0 0 15px rgba(168, 85, 247, 0.3) !important;
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.55), inset 0 0 10px rgba(168, 85, 247, 0.25) !important;
 }
 
 .cyber-login-title {
-  font-size: 44px !important;
-  font-weight: 900 !important;
+  font-size: 28px !important;
+  font-weight: 800 !important;
   letter-spacing: 0.04em !important;
   color: #ffffff !important;
   text-transform: uppercase !important;
-  line-height: 1.1 !important;
+  line-height: 1.15 !important;
   font-family: var(--font-heading) !important;
-  text-shadow: 0 0 25px rgba(0, 240, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.8) !important;
+  text-shadow: 0 0 18px rgba(0, 240, 255, 0.35), 0 2px 6px rgba(0, 0, 0, 0.8) !important;
   transition: font-size 0.25s ease !important;
   word-break: normal !important;
   max-width: 100% !important;
 }
 
 .cyber-login-subtitle {
-  font-size: 17px;
+  font-size: 13.5px;
   font-weight: 700;
   font-family: var(--font-mono);
   letter-spacing: 0.08em;
   color: #00f0ff;
-  text-shadow: 0 0 12px rgba(0, 240, 255, 0.7);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
   margin: 0;
   transition: font-size 0.25s ease;
   max-width: 100%;
@@ -142,15 +142,15 @@
 .cyber-hud-card-wrapper {
   position: relative;
   width: 100%;
-  max-width: 520px;
+  max-width: 440px;
   box-sizing: border-box;
-  filter: drop-shadow(0 0 25px rgba(0, 240, 255, 0.25)) drop-shadow(0 0 50px rgba(236, 72, 153, 0.2));
+  filter: drop-shadow(0 0 18px rgba(0, 240, 255, 0.2)) drop-shadow(0 0 36px rgba(236, 72, 153, 0.15));
 }
 
 .cyber-hud-form-body {
   position: relative;
   z-index: 2;
-  padding: 48px 40px 38px 40px;
+  padding: 26px 22px 20px 22px;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -161,7 +161,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: 12px;
   color: #94a3b8;
   padding-top: 2px;
   flex-wrap: wrap;
@@ -174,17 +174,17 @@
 .hud-login-card {
   position: relative;
   width: 100%;
-  max-width: 540px;
+  max-width: 440px;
   background: rgba(14, 11, 36, 0.88);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1.5px solid rgba(0, 240, 255, 0.5);
-  border-radius: 28px;
-  padding: 46px 42px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(0, 240, 255, 0.45);
+  border-radius: 18px;
+  padding: 26px 24px;
   box-shadow: 
-    0 0 35px rgba(0, 240, 255, 0.25),
-    0 0 70px rgba(168, 85, 247, 0.2),
-    inset 0 0 30px rgba(168, 85, 247, 0.08);
+    0 0 25px rgba(0, 240, 255, 0.2),
+    0 0 50px rgba(168, 85, 247, 0.15),
+    inset 0 0 20px rgba(168, 85, 247, 0.06);
   transition: all 0.3s ease;
   box-sizing: border-box;
 }
@@ -193,68 +193,68 @@
 .hud-corner-tl {
   position: absolute;
   top: -2px;
-  left: 28px;
-  width: 75px;
-  height: 4px;
+  left: 20px;
+  width: 55px;
+  height: 3px;
   background: linear-gradient(90deg, #00f0ff, #a855f7);
-  box-shadow: 0 0 12px #00f0ff, 0 0 20px #a855f7;
+  box-shadow: 0 0 10px #00f0ff, 0 0 16px #a855f7;
   border-radius: 2px;
 }
 
 .hud-corner-tr {
   position: absolute;
   top: -2px;
-  right: 28px;
-  width: 35px;
-  height: 4px;
+  right: 20px;
+  width: 25px;
+  height: 3px;
   background: #ec4899;
-  box-shadow: 0 0 12px #ec4899;
+  box-shadow: 0 0 10px #ec4899;
   border-radius: 2px;
 }
 
 .hud-corner-br {
   position: absolute;
   bottom: -2px;
-  right: 28px;
-  width: 75px;
-  height: 4px;
+  right: 20px;
+  width: 55px;
+  height: 3px;
   background: linear-gradient(90deg, #a855f7, #ec4899);
-  box-shadow: 0 0 14px #ec4899;
+  box-shadow: 0 0 10px #ec4899;
   border-radius: 2px;
 }
 
 .hud-bracket-left {
   position: absolute;
   left: -2px;
-  top: 45px;
-  width: 4px;
-  height: 55px;
+  top: 30px;
+  width: 3px;
+  height: 40px;
   background: #00f0ff;
-  box-shadow: 0 0 12px #00f0ff;
+  box-shadow: 0 0 10px #00f0ff;
   border-radius: 2px;
 }
 
 .hud-bracket-right {
   position: absolute;
   right: -2px;
-  bottom: 55px;
-  width: 4px;
-  height: 65px;
+  bottom: 35px;
+  width: 3px;
+  height: 45px;
   background: #ec4899;
-  box-shadow: 0 0 12px #ec4899;
+  box-shadow: 0 0 10px #ec4899;
   border-radius: 2px;
 }
 
 /* Custom Cyber Login Inputs */
 .cyber-login-input {
   width: 100%;
-  height: 54px;
+  height: 40px;
   background: rgba(18, 14, 42, 0.9) !important;
-  border: 1.5px solid rgba(88, 70, 140, 0.6) !important;
-  border-radius: 14px !important;
-  padding: 0 18px 0 46px !important;
+  border: 1px solid rgba(88, 70, 140, 0.6) !important;
+  border-radius: 10px !important;
+  padding: 0 14px 0 38px !important;
   color: #ffffff !important;
-  font-size: 15px !important;
+  font-size: 13px !important;
   transition: all 0.2s ease !important;
   outline: none !important;
   box-sizing: border-box !important;
@@ -262,33 +262,33 @@
 
 .cyber-login-input:focus {
   border-color: #00f0ff !important;
-  box-shadow: 0 0 18px rgba(0, 240, 255, 0.4) !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.35) !important;
   background: rgba(22, 17, 52, 0.95) !important;
 }
 
 .cyber-login-input::placeholder {
   color: #64748b !important;
-  font-size: 14px !important;
+  font-size: 12.5px !important;
 }
 
 /* Glowing Capsule Action Button */
 .cyber-login-btn {
   width: 100%;
-  height: 54px;
+  height: 40px;
   background: linear-gradient(135deg, rgba(9, 15, 32, 0.98), rgba(18, 25, 49, 0.96)) !important;
   border: 1px solid rgba(0, 240, 255, 0.72) !important;
   border-radius: 9999px !important;
   color: #effbff !important;
   font-family: var(--font-heading) !important;
-  font-size: 15.5px !important;
+  font-size: 13px !important;
   font-weight: 800 !important;
-  letter-spacing: 0.12em !important;
+  letter-spacing: 0.1em !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   cursor: pointer !important;
-  box-shadow: inset 0 0 18px rgba(0, 240, 255, 0.10), 0 0 22px rgba(0, 240, 255, 0.18), 0 0 38px rgba(168, 85, 247, 0.18) !important;
+  box-shadow: inset 0 0 14px rgba(0, 240, 255, 0.10), 0 0 18px rgba(0, 240, 255, 0.16), 0 0 28px rgba(168, 85, 247, 0.14) !important;
   transition: all 0.25s ease !important;
   text-transform: uppercase !important;
   outline: none !important;
@@ -429,27 +429,27 @@
     gap: 20px !important;
   }
   .cyber-login-crest {
-    width: 165px !important;
-    height: 165px !important;
+    width: 110px !important;
+    height: 110px !important;
   }
   .cyber-login-title {
-    font-size: 34px !important;
+    font-size: 24px !important;
   }
   .cyber-hud-form-body {
-    padding: 38px 30px 30px 30px !important;
+    padding: 22px 18px 18px 18px !important;
   }
 }
 
 /* Mobile Devices (<= 640px) - STRICT 0-OVERFLOW */
 @media (max-width: 640px) {
   .cyber-login-container {
-    padding: 20px 12px !important;
+    padding: 16px 10px !important;
     overflow-x: hidden !important;
   }
   .cyber-login-layout {
     flex-direction: column !important;
-    gap: 22px !important;
-    padding: 6px 0 !important;
+    gap: 16px !important;
+    padding: 4px 0 !important;
     align-items: center !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -460,24 +460,24 @@
     width: 100% !important;
     align-items: center !important;
     text-align: center !important;
-    gap: 16px !important;
+    gap: 12px !important;
     padding: 0 4px !important;
   }
   .cyber-login-crest {
-    width: 125px !important;
-    height: 125px !important;
+    width: 90px !important;
+    height: 90px !important;
   }
   .cyber-login-title {
-    font-size: clamp(22px, 6.2vw, 28px) !important;
+    font-size: clamp(18px, 5.2vw, 22px) !important;
     line-height: 1.15 !important;
   }
   .cyber-login-subtitle {
-    font-size: 13.5px !important;
+    font-size: 12px !important;
     letter-spacing: 0.04em !important;
   }
   .cyber-event-badge {
-    padding: 10px 14px !important;
-    gap: 10px !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
     max-width: 100% !important;
   }
   .cyber-hud-card-col {
@@ -489,40 +489,40 @@
     width: 100% !important;
   }
   .cyber-hud-form-body {
-    padding: 32px 18px 24px 18px !important;
+    padding: 18px 14px 16px 14px !important;
     width: 100% !important;
   }
   .cyber-login-input {
-    height: 48px !important;
-    font-size: 14px !important;
-    padding: 0 14px 0 40px !important;
+    height: 38px !important;
+    font-size: 12.5px !important;
+    padding: 0 12px 0 34px !important;
   }
   .cyber-login-btn {
-    height: 48px !important;
-    font-size: 14px !important;
+    height: 38px !important;
+    font-size: 12.5px !important;
   }
   .cyber-auth-row {
-    font-size: 12px !important;
+    font-size: 11px !important;
     gap: 6px !important;
   }
-  .hud-corner-tl { width: 45px; left: 14px; }
-  .hud-corner-tr { width: 22px; right: 14px; }
-  .hud-corner-br { width: 45px; right: 14px; }
-  .hud-bracket-left { height: 30px; top: 25px; }
-  .hud-bracket-right { height: 35px; bottom: 30px; }
+  .hud-corner-tl { width: 35px; left: 10px; }
+  .hud-corner-tr { width: 18px; right: 10px; }
+  .hud-corner-br { width: 35px; right: 10px; }
+  .hud-bracket-left { height: 25px; top: 20px; }
+  .hud-bracket-right { height: 30px; bottom: 25px; }
 }
 
 /* Extra Small Mobile Devices (<= 380px) */
 @media (max-width: 380px) {
   .cyber-login-container {
-    padding: 16px 8px !important;
+    padding: 12px 6px !important;
   }
   .cyber-login-crest {
-    width: 105px !important;
-    height: 105px !important;
+    width: 75px !important;
+    height: 75px !important;
   }
   .cyber-login-title {
-    font-size: 22px !important;
+    font-size: 18px !important;
   }
   .cyber-login-subtitle {
     font-size: 12px !important;

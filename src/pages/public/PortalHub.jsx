@@ -114,26 +114,26 @@ export default function PortalHub() {
         <main className="flex-1 w-full max-w-full pt-6 sm:pt-8 pb-16">
           <div className="portal-container">
             {/* Hero Section: Perfectly locked to the left edge of the portal container */}
-            <section className="text-left" style={{ margin: '0 0 36px 0', padding: 0 }}>
+            <section className="text-left" style={{ margin: '0 0 24px 0', padding: 0 }}>
               {/* Eyebrow */}
-              <div className="inline-flex items-center gap-2 mb-3 font-mono text-xs sm:text-sm font-bold tracking-[0.25em] text-[#00f0ff] uppercase drop-shadow-[0_0_10px_rgba(0,240,255,0.7)]">
-                <span className="text-[#00f0ff] text-sm leading-none animate-pulse">✦</span>
+              <div className="inline-flex items-center gap-2 mb-2 font-mono text-[11px] font-bold tracking-[0.2em] text-[#00f0ff] uppercase drop-shadow-[0_0_8px_rgba(0,240,255,0.7)]">
+                <span className="text-[#00f0ff] text-xs leading-none animate-pulse">✦</span>
                 <span>WELCOME TO</span>
               </div>
 
-              {/* Massive Bold Headline */}
-              <h1 className="tracking-wide leading-[1.08] mb-3 drop-shadow-[0_0_40px_rgba(0,0,0,0.95)] max-w-full">
+              {/* Headline */}
+              <h1 className="tracking-wide leading-[1.08] mb-2 drop-shadow-[0_0_30px_rgba(0,0,0,0.95)] max-w-full">
                 <span
                   style={{
                     fontFamily: 'var(--font-cyber)',
-                    fontSize: 'clamp(2rem, 7vw, 4.2rem)',
+                    fontSize: 'clamp(1.6rem, 4.2vw, 2.5rem)',
                     fontWeight: 900,
                     color: '#ffffff',
                     letterSpacing: '0.04em',
                     display: 'inline-block',
                     maxWidth: '100%',
-                    textShadow: '0 0 25px rgba(0, 240, 255, 0.85), 0 0 50px rgba(0, 240, 255, 0.45)',
-                    WebkitTextStroke: '1.2px rgba(0, 240, 255, 0.4)',
+                    textShadow: '0 0 20px rgba(0, 240, 255, 0.85), 0 0 40px rgba(0, 240, 255, 0.45)',
+                    WebkitTextStroke: '0.8px rgba(0, 240, 255, 0.4)',
                   }}
                 >
                   CYBER
@@ -142,14 +142,14 @@ export default function PortalHub() {
                 <span
                   style={{
                     fontFamily: 'var(--font-cyber)',
-                    fontSize: 'clamp(1.65rem, 6.2vw, 4rem)',
+                    fontSize: 'clamp(1.4rem, 3.8vw, 2.3rem)',
                     fontWeight: 900,
                     letterSpacing: '0.04em',
                     background: 'linear-gradient(90deg, #f5d0fe 0%, #e879f9 40%, #ec4899 75%, #f43f5e 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    filter: 'drop-shadow(0 0 35px rgba(236,72,153,0.75))',
-                    WebkitTextStroke: '0.8px rgba(236,72,153,0.35)',
+                    filter: 'drop-shadow(0 0 25px rgba(236,72,153,0.75))',
+                    WebkitTextStroke: '0.6px rgba(236,72,153,0.35)',
                     display: 'inline-block',
                     maxWidth: '100%',
                     wordBreak: 'break-word',
@@ -163,13 +163,13 @@ export default function PortalHub() {
               <h2
                 style={{
                   fontFamily: 'var(--font-heading)',
-                  fontSize: 'clamp(1rem, 2.5vw, 1.65rem)',
+                  fontSize: 'clamp(0.85rem, 1.8vw, 1.15rem)',
                   fontWeight: 800,
                   color: '#00f0ff',
                   letterSpacing: '-0.01em',
-                  marginTop: '10px',
+                  marginTop: '6px',
                   marginBottom: '0px',
-                  textShadow: '0 0 18px rgba(0, 240, 255, 0.65)',
+                  textShadow: '0 0 14px rgba(0, 240, 255, 0.65)',
                 }}
               >
                 Register. Verify. Show up ready.
@@ -187,7 +187,7 @@ export default function PortalHub() {
                     style={{
                       background: c.cardBg,
                       border: `1.5px solid ${c.borderColor}`,
-                      boxShadow: `0 0 18px ${c.glow}, inset 0 0 14px ${c.color}10, 0 10px 25px rgba(0, 0, 0, 0.85)`,
+                      boxShadow: `0 0 14px ${c.glow}, inset 0 0 12px ${c.color}10, 0 8px 20px rgba(0, 0, 0, 0.85)`,
                     }}
                   >
                     {/* Top Right Subtle Cyber Accent Line */}
@@ -195,8 +195,8 @@ export default function PortalHub() {
                       style={{
                         position: 'absolute',
                         top: 0,
-                        right: '28px',
-                        width: '44px',
+                        right: '24px',
+                        width: '36px',
                         height: '1.5px',
                         background: c.color,
                         boxShadow: `0 0 8px ${c.color}`,
@@ -207,13 +207,13 @@ export default function PortalHub() {
                     <div
                       style={{
                         position: 'absolute',
-                        bottom: '12px',
-                        right: '14px',
-                        width: '32px',
-                        height: '20px',
+                        bottom: '10px',
+                        right: '12px',
+                        width: '24px',
+                        height: '16px',
                         borderBottom: `1.5px solid ${c.color}40`,
                         borderRight: `1.5px solid ${c.color}40`,
-                        borderBottomRightRadius: '8px',
+                        borderBottomRightRadius: '6px',
                         pointerEvents: 'none',
                       }}
                     />
@@ -230,19 +230,19 @@ export default function PortalHub() {
                       {c.num}
                     </span>
 
-                    {/* Left: Node Icon Box (Identical 60px fixed width on every card) */}
+                    {/* Left: Node Icon Box (Identical fixed width on every card) */}
                     <div
                       className="card-icon-box group-hover:scale-105"
                       style={{
                         background: `${c.color}15`,
                         border: `1.5px solid ${c.color}`,
-                        boxShadow: `0 0 18px ${c.color}35`,
+                        boxShadow: `0 0 14px ${c.color}35`,
                       }}
                     >
-                      <Icon style={{ width: '28px', height: '28px', color: c.color }} />
+                      <Icon style={{ width: '20px', height: '20px', color: c.color }} />
                     </div>
 
-                    {/* Right: Content Column (Exact same X start coordinate for all items) */}
+                    {/* Right: Content Column */}
                     <div className="card-content">
                       <div style={{ width: '100%' }}>
                         {/* Header Row: Tag Pill */}
@@ -251,9 +251,9 @@ export default function PortalHub() {
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              padding: '4px 14px',
+                              padding: '2px 10px',
                               borderRadius: '9999px',
-                              fontSize: '11.5px',
+                              fontSize: '10px',
                               fontFamily: 'var(--font-mono)',
                               fontWeight: 700,
                               letterSpacing: '0.08em',
@@ -271,12 +271,12 @@ export default function PortalHub() {
                         <h3
                           style={{
                             fontFamily: 'var(--font-heading)',
-                            fontSize: '1.25rem',
+                            fontSize: '1.02rem',
                             fontWeight: 800,
                             color: '#ffffff',
                             letterSpacing: '-0.01em',
-                            marginTop: '8px',
-                            marginBottom: '6px',
+                            marginTop: '6px',
+                            marginBottom: '4px',
                             lineHeight: 1.25,
                           }}
                         >
@@ -287,9 +287,9 @@ export default function PortalHub() {
                         <p
                           style={{
                             fontFamily: 'var(--font-body)',
-                            fontSize: '0.92rem',
+                            fontSize: '0.82rem',
                             color: '#94a3b8',
-                            lineHeight: 1.55,
+                            lineHeight: 1.5,
                             margin: 0,
                           }}
                         >
@@ -298,24 +298,24 @@ export default function PortalHub() {
                       </div>
 
                       {/* Launch Action Button */}
-                      <div style={{ marginTop: '18px' }}>
+                      <div style={{ marginTop: '12px' }}>
                         <Link
                           to={c.link}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '8px',
-                            padding: '6px 24px',
+                            gap: '6px',
+                            padding: '4px 18px',
                             borderRadius: '9999px',
                             background: `${c.color}15`,
                             border: `1.2px solid ${c.btnBorder}`,
                             color: c.color,
-                            fontSize: '13.5px',
+                            fontSize: '12px',
                             fontFamily: 'var(--font-mono)',
                             fontWeight: 700,
                             letterSpacing: '0.04em',
-                            boxShadow: `0 0 12px ${c.color}30`,
+                            boxShadow: `0 0 10px ${c.color}30`,
                             textDecoration: 'none',
                             transition: 'all 0.2s ease',
                             cursor: 'pointer',
@@ -330,7 +330,7 @@ export default function PortalHub() {
                           }}
                         >
                           <span>Launch</span>
-                          <ArrowRight style={{ width: '14px', height: '14px' }} />
+                          <ArrowRight style={{ width: '12px', height: '12px' }} />
                         </Link>
                       </div>
                     </div>

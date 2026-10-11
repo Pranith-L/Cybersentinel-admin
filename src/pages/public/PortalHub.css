@@ -67,7 +67,7 @@
 .cards-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 18px;
+  gap: 12px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -76,13 +76,13 @@
 @media (min-width: 900px) {
   .cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px 30px;
+    gap: 14px 16px;
   }
 }
 
 @media (min-width: 1536px) {
   .cards-grid {
-    gap: 32px 36px;
+    gap: 16px 18px;
   }
 }
 
@@ -90,87 +90,87 @@
 .portal-card {
   position: relative;
   min-height: auto;
-  padding: 20px 18px;
+  padding: 14px 16px;
   box-sizing: border-box;
-  border-radius: 18px;
+  border-radius: 12px;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 16px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  gap: 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
   overflow: hidden;
   max-width: 100%;
 }
 
 @media (min-width: 640px) {
   .portal-card {
-    padding: 26px 28px;
-    gap: 22px;
-    border-radius: 20px;
-    min-height: 200px;
+    padding: 16px 18px;
+    gap: 16px;
+    border-radius: 14px;
+    min-height: auto;
   }
 }
 
 @media (min-width: 1024px) {
   .portal-card {
-    padding: 28px 32px;
-    gap: 24px;
-    min-height: 220px;
+    padding: 16px 20px;
+    gap: 16px;
+    min-height: auto;
   }
 }
 
 @media (min-width: 1536px) {
   .portal-card {
-    padding: 34px 38px;
-    gap: 28px;
-    min-height: 235px;
-    border-radius: 24px;
+    padding: 18px 22px;
+    gap: 18px;
+    min-height: auto;
+    border-radius: 16px;
   }
 }
 
 /* Hover and Active feedback */
 @media (hover: hover) and (pointer: fine) {
   .portal-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
   }
 }
 
 .portal-card:active {
-  transform: translateY(-1px);
+  transform: translateY(0);
 }
 
 /* Node Icon Box */
 .card-icon-box {
-  width: 50px;
-  height: 50px;
-  min-width: 50px;
-  border-radius: 14px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   box-sizing: border-box;
   margin-top: 2px;
-  transition: transform 0.22s ease;
+  transition: transform 0.2s ease;
 }
 
 @media (min-width: 640px) {
   .card-icon-box {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    border-radius: 16px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 11px;
   }
 }
 
 @media (min-width: 1536px) {
   .card-icon-box {
-    width: 66px;
-    height: 66px;
-    min-width: 66px;
-    border-radius: 18px;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 12px;
   }
 }
 
@@ -192,10 +192,10 @@
 /* Background Watermark Numeral */
 .card-numeral {
   position: absolute;
-  top: 14px;
-  right: 18px;
+  top: 10px;
+  right: 14px;
   font-family: var(--font-cyber, 'Orbitron', monospace);
-  font-size: 1.6rem;
+  font-size: 1.15rem;
   font-weight: 900;
   user-select: none;
   line-height: 1;
@@ -206,40 +206,40 @@
 
 @media (min-width: 640px) {
   .card-numeral {
-    top: 20px;
-    right: 28px;
-    font-size: 2.2rem;
+    top: 12px;
+    right: 18px;
+    font-size: 1.45rem;
   }
 }
 
 @media (min-width: 1536px) {
   .card-numeral {
-    top: 24px;
-    right: 34px;
-    font-size: 2.6rem;
+    top: 14px;
+    right: 20px;
+    font-size: 1.65rem;
   }
 }
 
 /* Extra Small Phones (<=420px): Compact spacing */
 @media (max-width: 420px) {
   .portal-container {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 10px;
+    padding-right: 10px;
   }
   .portal-card {
-    padding: 16px 14px;
-    gap: 12px;
-    border-radius: 16px;
+    padding: 12px 12px;
+    gap: 10px;
+    border-radius: 11px;
   }
   .card-icon-box {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    border-radius: 12px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 8px;
   }
   .card-numeral {
-    font-size: 1.35rem;
-    top: 12px;
-    right: 12px;
+    font-size: 1.05rem;
+    top: 8px;
+    right: 10px;
   }
 }

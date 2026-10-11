@@ -17,55 +17,55 @@ export function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 w-full pt-3 sm:pt-4 pb-2">
+    <header className="sticky top-0 z-50 w-full pt-2 sm:pt-2.5 pb-1.5">
       {/* Standalone Separate Elements Across Top Row (Unboxed) */}
-      <div className="portal-container flex items-center justify-between gap-3 sm:gap-4">
+      <div className="portal-container flex items-center justify-between gap-2.5 sm:gap-3">
         {/* Left: Brand Badge (Separate Floating Glass Island) */}
         <Link
           to="/"
-          className="flex items-center gap-3 px-3.5 py-2 rounded-2xl group transition-all duration-200"
+          className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl group transition-all duration-200"
           style={{
             background: 'rgba(7, 12, 28, 0.85)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
-            border: '1.5px solid rgba(0, 240, 255, 0.32)',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 240, 255, 0.12)',
+            border: '1.2px solid rgba(0, 240, 255, 0.32)',
+            boxShadow: '0 6px 18px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 240, 255, 0.1)',
             textDecoration: 'none',
           }}
         >
           <div className="relative flex-shrink-0">
             {/* Hexagonal / Chamfered Cyber Aperture for Crest */}
             <div
-              className="w-10 h-10 p-[2px] rounded-xl flex items-center justify-center relative overflow-hidden transition-transform duration-200 group-hover:scale-105"
+              className="w-7 h-7 p-[1.5px] rounded-lg flex items-center justify-center relative overflow-hidden transition-transform duration-200 group-hover:scale-105"
               style={{
                 background: 'linear-gradient(135deg, #00f0ff 0%, #a855f7 50%, #ec4899 100%)',
-                boxShadow: '0 0 16px rgba(0, 240, 255, 0.65)',
+                boxShadow: '0 0 12px rgba(0, 240, 255, 0.55)',
               }}
             >
               <img
                 src="/assets/cybersentinel_crest_logo.jpg"
                 alt="Cyber Sentinel Logo"
-                className="w-full h-full object-cover rounded-[9px]"
+                className="w-full h-full object-cover rounded-[6px]"
               />
             </div>
             {/* Live radar status node */}
             <span
-              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#060a1a]"
+              className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-[#060a1a]"
               style={{ animation: 'cyberRadarPulseEmerald 2.5s infinite' }}
               title="Sentinel Core Active"
             />
           </div>
 
           <div>
-            <div className="flex items-center gap-1.5 leading-none">
+            <div className="flex items-center gap-1 leading-none">
               <span
                 style={{
                   fontFamily: 'var(--font-cyber)',
-                  fontSize: '18px',
+                  fontSize: '14px',
                   fontWeight: 900,
-                  letterSpacing: '0.08em',
+                  letterSpacing: '0.06em',
                   color: '#00f0ff',
-                  textShadow: '0 0 14px rgba(0, 240, 255, 0.85)',
+                  textShadow: '0 0 10px rgba(0, 240, 255, 0.85)',
                 }}
               >
                 CYBER
@@ -73,22 +73,22 @@ export function Navbar() {
               <span
                 style={{
                   fontFamily: 'var(--font-cyber)',
-                  fontSize: '18px',
+                  fontSize: '14px',
                   fontWeight: 900,
-                  letterSpacing: '0.08em',
+                  letterSpacing: '0.06em',
                   color: '#ffffff',
                 }}
               >
                 SENTINEL
               </span>
             </div>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-1.5 mt-0.5">
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '9.5px',
+                  fontSize: '8px',
                   fontWeight: 800,
-                  letterSpacing: '0.28em',
+                  letterSpacing: '0.22em',
                   color: '#c084fc',
                   textTransform: 'uppercase',
                 }}
@@ -101,13 +101,13 @@ export function Navbar() {
 
         {/* Center: Navigation Links (Separate Floating Command Deck Dock) */}
         <nav
-          className="hidden lg:flex items-center gap-1 px-3 py-1.5 rounded-2xl"
+          className="hidden lg:flex items-center gap-0.5 px-2 py-1 rounded-xl"
           style={{
             background: 'rgba(7, 12, 28, 0.85)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
-            border: '1.5px solid rgba(0, 240, 255, 0.28)',
-            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 240, 255, 0.1)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1.2px solid rgba(0, 240, 255, 0.25)',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 240, 255, 0.08)',
           }}
         >
           {/* 01: Portal Hub */}
@@ -115,8 +115,8 @@ export function Navbar() {
             to="/"
             className={`cyber-nav-tab ${isActive('/') ? 'active' : ''}`}
           >
-            <span className="text-[10px] font-mono text-cyan-400/70 font-semibold tracking-wider">01</span>
-            <Home className="w-4 h-4 text-cyan-400" />
+            <span className="text-[9px] font-mono text-cyan-400/70 font-semibold tracking-wider">01</span>
+            <Home className="w-3.5 h-3.5 text-cyan-400" />
             <span>Portal Hub</span>
           </Link>
 
@@ -125,7 +125,7 @@ export function Navbar() {
             to="/register"
             className={`cyber-nav-tab ${isActive('/register') ? 'active' : ''}`}
           >
-            <span className="text-[10px] font-mono text-cyan-400/70 font-semibold tracking-wider">02</span>
+            <span className="text-[9px] font-mono text-cyan-400/70 font-semibold tracking-wider">02</span>
             <span>Register</span>
           </Link>
 
@@ -134,7 +134,7 @@ export function Navbar() {
             to="/check"
             className={`cyber-nav-tab ${isActive('/check') ? 'active' : ''}`}
           >
-            <span className="text-[10px] font-mono text-cyan-400/70 font-semibold tracking-wider">03</span>
+            <span className="text-[9px] font-mono text-cyan-400/70 font-semibold tracking-wider">03</span>
             <span>Check Pass</span>
           </Link>
 
@@ -143,7 +143,7 @@ export function Navbar() {
             to="/team/create"
             className={`cyber-nav-tab ${isActive('/team/create') ? 'active' : ''}`}
           >
-            <span className="text-[10px] font-mono text-cyan-400/70 font-semibold tracking-wider">04</span>
+            <span className="text-[9px] font-mono text-cyan-400/70 font-semibold tracking-wider">04</span>
             <span>Teams</span>
           </Link>
 
@@ -157,7 +157,7 @@ export function Navbar() {
             }}
             className="cyber-nav-tab"
           >
-            <span className="text-[10px] font-mono text-cyan-400/70 font-semibold tracking-wider">05</span>
+            <span className="text-[9px] font-mono text-cyan-400/70 font-semibold tracking-wider">05</span>
             <span>Events</span>
           </a>
 
@@ -166,42 +166,42 @@ export function Navbar() {
             href="mailto:support@cybersentinel.in"
             className="cyber-nav-tab"
           >
-            <span className="text-[10px] font-mono text-cyan-400/70 font-semibold tracking-wider">06</span>
+            <span className="text-[9px] font-mono text-cyan-400/70 font-semibold tracking-wider">06</span>
             <span>Contact</span>
           </a>
         </nav>
 
         {/* Right: Separate Action Buttons (Standalone Islands) */}
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-2">
           {/* Admin Terminal Button */}
           <Link
             to="/admin/login"
-            className="cyber-btn-chamfer flex items-center gap-2 px-4 py-2 text-sm font-semibold tracking-wide text-slate-200"
+            className="cyber-btn-chamfer flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wide text-slate-200"
             style={{
               background: 'rgba(12, 17, 36, 0.90)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
-              border: '1.5px solid rgba(168, 85, 247, 0.45)',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.6), 0 0 14px rgba(168, 85, 247, 0.25)',
+              border: '1.2px solid rgba(168, 85, 247, 0.45)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.6), 0 0 10px rgba(168, 85, 247, 0.2)',
               textDecoration: 'none',
             }}
           >
-            <Shield className="w-4 h-4 text-violet-400" />
+            <Shield className="w-3.5 h-3.5 text-violet-400" />
             <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700 }}>Admin</span>
           </Link>
 
           {/* Coordinator Action Button */}
           <Link
             to="/coordinator/login"
-            className="cyber-btn-chamfer flex items-center gap-2 px-5 py-2 text-sm font-extrabold tracking-wide text-[#030917]"
+            className="cyber-btn-chamfer flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold tracking-wide text-[#030917]"
             style={{
               background: 'linear-gradient(135deg, #00f0ff 0%, #38bdf8 50%, #00b4d8 100%)',
-              border: '1.5px solid #38bdf8',
-              boxShadow: '0 0 24px rgba(0, 240, 255, 0.75)',
+              border: '1.2px solid #38bdf8',
+              boxShadow: '0 0 16px rgba(0, 240, 255, 0.65)',
               textDecoration: 'none',
             }}
           >
-            <Users className="w-4 h-4 text-[#030917]" />
+            <Users className="w-3.5 h-3.5 text-[#030917]" />
             <span
               style={{
                 fontFamily: 'var(--font-heading)',

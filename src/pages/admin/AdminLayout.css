@@ -9,7 +9,7 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  height: 64px;
+  height: 50px;
   padding: 0 16px;
   background: rgba(7, 9, 25, 0.92);
   backdrop-filter: blur(18px);
@@ -22,14 +22,14 @@
 
 @media (min-width: 640px) {
   .admin-header-chassis {
-    height: 72px;
-    padding: 0 24px;
+    height: 52px;
+    padding: 0 20px;
   }
 }
 
 @media (min-width: 1024px) {
   .admin-header-chassis {
-    padding: 0 32px;
+    padding: 0 24px;
   }
 }
 
@@ -37,27 +37,27 @@
 .admin-content-workspace {
   flex: 1 1 auto;
   width: 100%;
-  max-width: 1440px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 16px 14px 48px;
+  padding: 12px 14px 36px;
   box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
   .admin-content-workspace {
-    padding: 24px 20px 56px;
+    padding: 16px 18px 40px;
   }
 }
 
 @media (min-width: 1024px) {
   .admin-content-workspace {
-    padding: 28px 32px 64px;
+    padding: 18px 22px 48px;
   }
 }
 
 @media (min-width: 1536px) {
   .admin-content-workspace {
-    max-width: 1680px;
-    padding: 34px 44px 76px;
+    max-width: 1480px;
+    padding: 22px 28px 52px;
   }
 }
