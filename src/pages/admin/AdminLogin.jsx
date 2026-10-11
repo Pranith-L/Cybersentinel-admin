@@ -414,6 +414,8 @@ export default function AdminLogin({ defaultRole = 'ADMIN' }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    title={showPassword ? 'Hide password' : 'Show password'}
                     style={{
                       position: 'absolute',
                       right: '16px',
@@ -428,7 +430,7 @@ export default function AdminLogin({ defaultRole = 'ADMIN' }) {
                       justifyContent: 'center',
                     }}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                   </button>
                 </div>
 

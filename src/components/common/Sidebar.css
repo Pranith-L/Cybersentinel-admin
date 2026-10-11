@@ -728,3 +728,69 @@
     font-size: 17px;
   }
 }
+
+/* Mobile Compact Adjustments */
+@media (max-width: 1023px) {
+  .cs-sidebar {
+    width: min(240px, 80vw) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .cs-topbar {
+    padding: 6px 10px !important;
+    min-height: 44px !important;
+  }
+  .cs-brand {
+    height: 44px !important;
+    margin: 6px 6px 4px !important;
+    padding: 0 8px 0 6px !important;
+  }
+  .cs-brand-logo {
+    width: 26px !important;
+    height: 26px !important;
+  }
+  .cs-brand-name {
+    font-size: 11px !important;
+  }
+  .cs-brand-role {
+    font-size: 8px !important;
+  }
+  .cs-sidebar-nav-item {
+    padding: 7px 9px !important;
+    font-size: 11.5px !important;
+    margin-bottom: 2px !important;
+  }
+  .cs-sidebar-nav-item .cs-nav-icon {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .cs-sidebar-footer {
+    padding: 6px 8px 10px !important;
+    gap: 6px !important;
+  }
+  .cs-coord-id {
+    padding: 7px 8px !important;
+  }
+  .cs-coord-avatar {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 10px !important;
+  }
+  .cs-coord-name {
+    font-size: 11.5px !important;
+  }
+  .cs-content {
+    padding: 10px 8px 28px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .cs-topbar {
+    padding: 5px 8px !important;
+  }
+  .cs-content {
+    padding: 8px 6px 24px !important;
+  }
+}
+

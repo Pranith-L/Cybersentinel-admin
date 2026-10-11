@@ -343,7 +343,7 @@ export function AdminCoordinators() {
                   justifyContent: 'center',
                 }}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
           </div>

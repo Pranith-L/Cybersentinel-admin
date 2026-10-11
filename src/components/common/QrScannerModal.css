@@ -196,3 +196,42 @@
     transform: scale(0.8);
   }
 }
+
+/* Mobile Compact QR Scanner View */
+@media (max-width: 640px) {
+  .cyber-qr-scanner-card {
+    min-height: 270px;
+    border-radius: 12px;
+  }
+  .cyber-qr-viewport {
+    min-height: 260px;
+  }
+  .cyber-qr-target-box {
+    width: 200px;
+    height: 200px;
+  }
+  .cyber-qr-corner {
+    width: 24px;
+    height: 24px;
+  }
+  .cyber-qr-instruction {
+    font-size: 10px;
+    padding: 5px 12px;
+    margin-top: 10px;
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (max-width: 380px) {
+  .cyber-qr-scanner-card {
+    min-height: 230px;
+  }
+  .cyber-qr-viewport {
+    min-height: 220px;
+  }
+  .cyber-qr-target-box {
+    width: 170px;
+    height: 170px;
+  }
+}
+

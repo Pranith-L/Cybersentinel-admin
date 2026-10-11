@@ -321,13 +321,13 @@ export default function CoordinatorAttendance() {
             setInspectionResult(null);
             setTeamInspectionResult(null);
           }}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold font-heading tracking-wide transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-bold font-heading tracking-wide transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
             scannerTab === 'participant'
               ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_15px_rgba(0,240,255,0.35)]'
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <UserCheck className="w-4 h-4" />
+          <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Participant Scanner</span>
         </button>
 
@@ -338,13 +338,13 @@ export default function CoordinatorAttendance() {
             setInspectionResult(null);
             setTeamInspectionResult(null);
           }}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold font-heading tracking-wide transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2 sm:py-2.5 px-2.5 sm:px-4 rounded-xl text-[11px] sm:text-xs font-bold font-heading tracking-wide transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
             scannerTab === 'team'
               ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.35)]'
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Team QR Scanner</span>
           {isTeamEvent && (
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Active event is a team competition" />
@@ -382,10 +382,10 @@ export default function CoordinatorAttendance() {
                     setScannerOpen(true);
                   }}
                   disabled={!selectedEventId}
-                  className="w-full py-4 px-6 rounded-xl border border-cyan-300/60 bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 text-white font-bold shadow-[0_0_22px_rgba(34,211,238,0.45)] hover:brightness-110 hover:shadow-[0_0_28px_rgba(59,130,246,0.5)] transition-all duration-200 flex items-center justify-center gap-3 group"
+                  className="w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl border border-cyan-300/60 bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 text-white font-bold shadow-[0_0_22px_rgba(34,211,238,0.45)] hover:brightness-110 hover:shadow-[0_0_28px_rgba(59,130,246,0.5)] transition-all duration-200 flex items-center justify-center gap-2.5 sm:gap-3 group"
                 >
-                  <Camera className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                  <span className="text-base">Launch Participant Camera Scanner</span>
+                  <Camera className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm sm:text-base">Launch Participant Camera Scanner</span>
                 </button>
 
                 <div className="relative flex py-1 items-center">
@@ -454,10 +454,10 @@ export default function CoordinatorAttendance() {
                     setScannerOpen(true);
                   }}
                   disabled={!selectedEventId}
-                  className="w-full py-4 px-6 rounded-xl border border-purple-400/60 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-bold shadow-[0_0_22px_rgba(168,85,247,0.45)] hover:brightness-110 hover:shadow-[0_0_28px_rgba(217,70,239,0.5)] transition-all duration-200 flex items-center justify-center gap-3 group"
+                  className="w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl border border-purple-400/60 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-bold shadow-[0_0_22px_rgba(168,85,247,0.45)] hover:brightness-110 hover:shadow-[0_0_28px_rgba(217,70,239,0.5)] transition-all duration-200 flex items-center justify-center gap-2.5 sm:gap-3 group"
                 >
-                  <Camera className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                  <span className="text-base">Launch Team QR Camera Scanner</span>
+                  <Camera className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm sm:text-base">Launch Team QR Camera Scanner</span>
                 </button>
 
                 <div className="relative flex py-1 items-center">
@@ -507,7 +507,7 @@ export default function CoordinatorAttendance() {
                   : 'border-emerald-500/50 bg-emerald-500/5'
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xl font-bold text-white">
@@ -615,7 +615,7 @@ export default function CoordinatorAttendance() {
                   : 'border-emerald-500/50 bg-emerald-500/5'
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-heading text-xl font-bold text-white">

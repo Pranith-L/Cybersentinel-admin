@@ -1356,67 +1356,235 @@
 
 /* Mobile Fallbacks (<= 640px) */
 @media (max-width: 640px) {
-  body { font-size: 12.5px; }
-  .cs-stat-grid,
-  .cs-roster-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 12px;
-  }
-  .cs-stat-card {
-    min-height: auto;
-    padding: 12px 14px !important;
-  }
-  .cs-stat-value {
-    font-size: 22px !important;
-  }
-  .portal-card {
-    padding: 14px 16px;
-    gap: 12px;
-  }
-  .card-icon-box {
-    width: 38px;
-    height: 38px;
-    border-radius: 9px;
-  }
-  .card-numeral {
-    font-size: 1.3rem;
-    top: 10px;
-    right: 14px;
+  html { font-size: 13px !important; }
+  body { font-size: 12px !important; }
+
+  /* Compact Container Spacing */
+  .portal-container {
+    width: min(100% - 16px, 100%) !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
   }
   .cs-content {
-    padding: 12px 10px 32px;
+    padding: 10px 8px 28px !important;
   }
+
+  /* Compact Grids */
+  .cs-stat-grid,
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .cs-roster-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  .cs-chart-grid,
+  .admin-charts-grid {
+    gap: 12px !important;
+  }
+
+  /* Compact Stat & Cyber Cards */
+  .cs-stat-card,
+  .cyber-card-purple,
+  .cyber-card-emerald,
+  .cyber-card-amber,
+  .cyber-card-pink {
+    min-height: auto !important;
+    padding: 10px 10px !important;
+    border-radius: 10px !important;
+  }
+  .cs-stat-icon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 7px !important;
+  }
+  .cs-stat-icon svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+  .cs-stat-value {
+    font-size: 19px !important;
+    margin-top: 4px !important;
+  }
+  .cs-stat-label {
+    font-size: 11px !important;
+    margin-top: 5px !important;
+  }
+  .cs-stat-delta {
+    font-size: 9.5px !important;
+    padding: 2px 6px !important;
+  }
+
+  /* Compact Glass Card & Chart Card */
+  .glass-card,
+  .cyber-chart-card {
+    padding: 12px 12px !important;
+    border-radius: 11px !important;
+  }
+
+  /* Compact Utilities Overrides for Mobile */
+  .p-4 { padding: 9px !important; }
+  .p-5 { padding: 11px !important; }
+  .p-6 { padding: 12px !important; }
+  .p-8 { padding: 14px !important; }
+  .p-10 { padding: 16px !important; }
+  .p-12 { padding: 18px !important; }
+
+  .px-4 { padding-left: 9px !important; padding-right: 9px !important; }
+  .px-5 { padding-left: 11px !important; padding-right: 11px !important; }
+  .px-6 { padding-left: 12px !important; padding-right: 12px !important; }
+  .px-8 { padding-left: 14px !important; padding-right: 14px !important; }
+
+  .py-3 { padding-top: 6px !important; padding-bottom: 6px !important; }
+  .py-4 { padding-top: 8px !important; padding-bottom: 8px !important; }
+  .py-5 { padding-top: 9px !important; padding-bottom: 9px !important; }
+  .py-6 { padding-top: 11px !important; padding-bottom: 11px !important; }
+
+  .gap-3 { gap: 7px !important; }
+  .gap-4 { gap: 9px !important; }
+  .gap-6 { gap: 11px !important; }
+  .gap-8 { gap: 13px !important; }
+
+  .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 7px !important; }
+  .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 9px !important; }
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 11px !important; }
+
+  /* Compact Typography on Mobile */
+  .text-base { font-size: 0.8125rem !important; }
+  .text-lg { font-size: 0.9rem !important; }
+  .text-xl { font-size: 1rem !important; }
+  .text-2xl { font-size: 1.15rem !important; }
+  .text-3xl { font-size: 1.35rem !important; line-height: 1.25 !important; }
+  .text-4xl { font-size: 1.55rem !important; line-height: 1.2 !important; }
+  .text-5xl { font-size: 1.75rem !important; line-height: 1.15 !important; }
+
+  /* Compact Portal Cards */
+  .portal-card {
+    padding: 12px 13px !important;
+    gap: 10px !important;
+    border-radius: 11px !important;
+  }
+  .card-icon-box {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 8px !important;
+  }
+  .card-icon-box svg {
+    width: 17px !important;
+    height: 17px !important;
+  }
+  .card-numeral {
+    font-size: 1.15rem !important;
+    top: 8px !important;
+    right: 12px !important;
+  }
+
+  /* Compact Header & Topbar */
   .cs-command-node {
-    display: none;
+    display: none !important;
+  }
+  .cs-topbar {
+    min-height: 44px !important;
+    padding: 6px 10px !important;
+    gap: 8px !important;
+  }
+  .cs-topbar-left {
+    gap: 6px !important;
   }
   .cs-secure-badge {
-    padding: 4px 8px;
-    font-size: 9px;
-    letter-spacing: 0.12em;
+    padding: 3px 8px !important;
+    font-size: 8.5px !important;
+    letter-spacing: 0.1em !important;
+  }
+  .cs-secure-badge svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  /* Buttons & Inputs */
+  .btn, .btn-primary, .btn-secondary, .btn-ghost, .cyber-btn-chamfer {
+    padding: 5px 10px !important;
+    font-size: 11.5px !important;
+    border-radius: 7px !important;
+  }
+  .cyber-input, input[type="text"], input[type="search"], select {
+    padding: 7px 10px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Tables */
+  .cs-table-container,
+  .table-container {
+    border-radius: 10px !important;
+  }
+  table th {
+    padding: 7px 9px !important;
+    font-size: 10.5px !important;
+  }
+  table td {
+    padding: 7px 9px !important;
+    font-size: 11.5px !important;
   }
 }
 
 /* Extra Small Phones (<= 420px) */
 @media (max-width: 420px) {
+  html { font-size: 12.5px !important; }
+  body { font-size: 11.5px !important; }
+
+  .portal-container {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    width: min(100% - 12px, 100%) !important;
+  }
+  .cs-content {
+    padding: 8px 6px 24px !important;
+  }
+
   .portal-card {
-    padding: 12px 12px;
-    gap: 10px;
+    padding: 10px 10px !important;
+    gap: 8px !important;
+    border-radius: 10px !important;
   }
   .card-icon-box {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    border-radius: 7px !important;
   }
   .card-numeral {
-    font-size: 1.2rem;
-    top: 8px;
-    right: 10px;
-    opacity: 0.22 !important;
+    font-size: 1rem !important;
+    top: 6px !important;
+    right: 8px !important;
+    opacity: 0.2 !important;
   }
   .cs-stat-value {
-    font-size: 20px !important;
+    font-size: 17px !important;
   }
   .cs-page-head {
-    gap: 8px;
+    gap: 6px !important;
+  }
+  .cs-page-title {
+    font-size: 1.15rem !important;
+  }
+  .glass-card,
+  .cyber-chart-card {
+    padding: 10px 10px !important;
+    border-radius: 9px !important;
+  }
+  .p-4 { padding: 7px !important; }
+  .p-5 { padding: 9px !important; }
+  .p-6 { padding: 10px !important; }
+}
+
+@media (max-width: 360px) {
+  .cs-stat-grid,
+  .admin-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
   }
 }
