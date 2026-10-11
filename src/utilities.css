@@ -1278,6 +1278,10 @@
   .cs-sidebar-drawer {
     transform: translateX(0) !important;
   }
+
+  .portal-container {
+    width: min(calc(100% - 100px), 1360px);
+  }
 }
 
 /* Large Screens >= 1280px */
@@ -1293,7 +1297,7 @@
     padding: 20px 24px 44px;
   }
   .portal-container {
-    width: min(100% - 48px, 1400px);
+    width: min(calc(100% - 120px), 1400px);
   }
 }
 
@@ -1303,7 +1307,7 @@
     max-width: 1500px;
   }
   .portal-container {
-    width: min(100% - 64px, 1460px);
+    width: min(calc(100% - 160px), 1480px);
   }
   .cs-stat-value {
     font-size: 26px !important;

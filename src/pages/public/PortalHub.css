@@ -32,13 +32,12 @@
 /* Central Portal Container with Fluid Margin & Width */
 .portal-container {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1360px;
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
   padding-left: 16px;
   padding-right: 16px;
-  overflow-x: hidden;
 }
 
 @media (min-width: 640px) {
@@ -50,16 +49,24 @@
 
 @media (min-width: 1024px) {
   .portal-container {
-    width: min(100% - 48px, 1440px);
-    padding-left: 0;
-    padding-right: 0;
+    width: min(calc(100% - 100px), 1360px) !important;
+    max-width: 1360px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 }
 
-@media (min-width: 1536px) {
+@media (min-width: 1440px) {
   .portal-container {
-    max-width: 1620px;
-    width: min(100% - 64px, 1620px);
+    width: min(calc(100% - 120px), 1400px) !important;
+    max-width: 1400px !important;
+  }
+}
+
+@media (min-width: 1920px) {
+  .portal-container {
+    width: min(calc(100% - 160px), 1480px) !important;
+    max-width: 1480px !important;
   }
 }
 
