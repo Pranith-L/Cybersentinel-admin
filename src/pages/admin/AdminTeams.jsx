@@ -402,12 +402,19 @@ export function AdminTeams() {
               required
               className="form-select"
               value={form.eventId}
-              onChange={(e) => setForm({ ...form, eventId: e.target.value })}
+              onChange={(e) => {
+                const selected = events.find((evt) => evt.id === e.target.value);
+                setForm({
+                  ...form,
+                  eventId: e.target.value,
+                  maxMembers: selected?.max_team_size || form.maxMembers || 2,
+                });
+              }}
             >
               <option value="">Select Event...</option>
               {events.map((evt) => (
                 <option key={evt.id} value={evt.id}>
-                  {evt.code} - {evt.name} ({evt.day})
+                  {evt.code} - {evt.name} ({evt.day}) {evt.event_type === 'TEAM' ? `[${evt.min_team_size}-${evt.max_team_size} members]` : ''}
                 </option>
               ))}
             </select>
@@ -438,10 +445,21 @@ export function AdminTeams() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Max Members *</label>
+              <label className="form-label">
+                Max Members *
+                {(() => {
+                  const sel = events.find((evt) => evt.id === form.eventId);
+                  return sel && sel.event_type === 'TEAM' ? (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginLeft: '6px' }}>
+                      ({sel.min_team_size} - {sel.max_team_size} members)
+                    </span>
+                  ) : null;
+                })()}
+              </label>
               <input
                 type="number"
-                min="2"
+                min={events.find((evt) => evt.id === form.eventId)?.min_team_size || 2}
+                max={events.find((evt) => evt.id === form.eventId)?.max_team_size || 20}
                 required
                 className="form-input"
                 value={form.maxMembers}

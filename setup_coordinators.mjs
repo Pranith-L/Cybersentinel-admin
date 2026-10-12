@@ -45,7 +45,7 @@ async function setup() {
         code: c.code,
         day: c.day,
         event_type: c.type,
-        min_team_size: 1,
+        min_team_size: c.code === 'PP' ? 3 : (c.type === 'TEAM' ? 2 : 1),
         max_team_size: c.type === 'TEAM' ? 4 : 1,
         status: 'ACTIVE'
       }).select().single();
